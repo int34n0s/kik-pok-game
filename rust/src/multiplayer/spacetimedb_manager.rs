@@ -1,12 +1,13 @@
+use crate::PlayerTableAccess;
 use crate::register_player_reducer::register_player;
 use crate::update_position_reducer::update_position;
-use crate::{DbConnection, ErrorContext, debug};
-use crate::{EntityTableAccess, PlayerTableAccess};
+use crate::{CONNECTION_STATE, DbConnection, Direction, ErrorContext, Positioning};
+use std::sync::atomic::Ordering;
 
 use godot::prelude::*;
 
-use spacetimedb_sdk::{Error, Table, credentials, DbContext};
-use uuid::Uuid;
+use crate::multiplayer::spacetimedb_client;
+use spacetimedb_sdk::{DbContext, Error, Table, credentials};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
 pub enum ConnectionState {
@@ -17,9 +18,8 @@ pub enum ConnectionState {
 }
 
 pub struct SpacetimeDBManager {
-    connection: Option<DbConnection>,
-    state: ConnectionState,
-    instance_id: String,
+    pub connection: Option<DbConnection>,
+    pub state: ConnectionState,
 }
 
 impl Default for SpacetimeDBManager {
@@ -30,20 +30,13 @@ impl Default for SpacetimeDBManager {
 
 impl SpacetimeDBManager {
     pub fn new() -> Self {
-        let instance_id = format!("kik-pok-{}", Uuid::new_v4());
-        godot_print!(
-            "Created SpacetimeDBManager with unique instance ID: {}",
-            instance_id
-        );
-
         Self {
             connection: None,
             state: ConnectionState::Disconnected,
-            instance_id,
         }
     }
 
-    pub fn connect(&mut self, host: &str, db_name: &str) -> Result<(), String> {
+    pub fn connect(&mut self, host: &str, db_name: &str, username: &str) -> Result<(), String> {
         if self.state != ConnectionState::Disconnected {
             return Err("Already connected or connecting".to_string());
         }
@@ -56,27 +49,30 @@ impl SpacetimeDBManager {
 
         self.state = ConnectionState::Connecting;
 
-        match self.connect_to_db(&format!("http://{}", host), db_name) {
+        match self.connect_to_db(&format!("http://{}", host), db_name, username) {
             Ok(connection) => {
                 godot_print!("Successfully connected to SpacetimeDB");
 
-                connection.reducers.on_debug(|_x| {
-                    godot_print!("[debug]");
-                });
+                connection
+                    .reducers
+                    .on_register_player(|_ctx, name, scene_id, direction| {
+                        godot_print!(
+                            "Player registration event: {} in scene {} with direction {:?}",
+                            name,
+                            scene_id,
+                            direction,
+                        );
 
-                connection.reducers.on_register_player(|ctx, name| {
-                    godot_print!("Player registration event: {} with status: {:?}", name, ctx.event.status);
-                });
+                        CONNECTION_STATE.store(1, Ordering::SeqCst);
+                    });
 
-                // Subscribe to all tables to receive data
-                connection.subscription_builder()
+                connection
+                    .subscription_builder()
                     .subscribe("SELECT * FROM player");
-                
-                connection.subscription_builder()
-                    .subscribe("SELECT * FROM entity");
 
                 self.connection = Some(connection);
                 self.state = ConnectionState::Connected;
+
                 Ok(())
             }
             Err(e) => {
@@ -87,20 +83,21 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn register_player(&mut self, username: String) -> Result<(), String> {
-        if self.state != ConnectionState::Connected {
-            return Err("Not connected to database".to_string());
-        }
-
+    pub fn register_player(
+        &mut self,
+        username: String,
+        scene_id: u32,
+        direction: Direction,
+    ) -> Result<(), String> {
         let connection = self.connection.as_ref().ok_or("No connection available")?;
 
-        godot_print!("Registering player with username: {}", username);
-
-        match connection.reducers.register_player(username) {
+        match connection
+            .reducers
+            .register_player(username, scene_id, direction)
+        {
             Ok(_) => {
                 godot_print!("Player registration request sent successfully!");
-                // For now, immediately set to LoggedIn - in production you'd wait for success callback
-                self.state = ConnectionState::LoggedIn;
+
                 Ok(())
             }
             Err(e) => {
@@ -111,18 +108,15 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn update_position(&self, x: f32, y: f32) -> Result<(), String> {
+    pub fn update_position(&self, positioning: Positioning) -> Result<(), String> {
         if self.state != ConnectionState::LoggedIn {
             return Err("Not logged in".to_string());
         }
 
         let connection = self.connection.as_ref().ok_or("No connection available")?;
 
-        match connection.reducers.update_position(x, y) {
-            Ok(_) => {
-                // Don't spam logs with position updates
-                Ok(())
-            }
+        match connection.reducers.update_position(positioning) {
+            Ok(_) => Ok(()),
             Err(e) => {
                 let error_msg = format!("Failed to update position: {}", e);
                 godot_print!("{}", error_msg);
@@ -135,42 +129,16 @@ impl SpacetimeDBManager {
         self.connection.as_ref()
     }
 
-    pub fn get_all_players(&self) -> Vec<(u32, String)> {
+    pub fn get_other_players(&self) -> Vec<spacetimedb_client::player_type::Player> {
         if let Some(connection) = &self.connection {
             connection
                 .db()
                 .player()
                 .iter()
-                .map(|player| (player.player_id, player.name.clone()))
+                .filter(|x| x.identity != connection.identity())
                 .collect()
         } else {
             Vec::new()
-        }
-    }
-
-    pub fn get_all_entities(&self) -> Vec<(u32, f32, f32)> {
-        if let Some(connection) = &self.connection {
-            connection
-                .db
-                .entity()
-                .iter()
-                .map(|entity| (entity.entity_id, entity.position.x, entity.position.y))
-                .collect()
-        } else {
-            Vec::new()
-        }
-    }
-
-    pub fn get_player_by_entity_id(&self, entity_id: u32) -> Option<(u32, String)> {
-        if let Some(connection) = &self.connection {
-            connection
-                .db
-                .player()
-                .iter()
-                .find(|player| player.player_id == entity_id)
-                .map(|player| (player.player_id, player.name.clone()))
-        } else {
-            None
         }
     }
 
@@ -189,9 +157,18 @@ impl SpacetimeDBManager {
         self.state == ConnectionState::LoggedIn
     }
 
+    pub fn set_state(&mut self, state: ConnectionState) {
+        self.state = state;
+    }
+
     /// Load credentials from a file and connect to the database.
-    fn connect_to_db(&self, host: &str, name: &str) -> Result<DbConnection, String> {
-        let instance_id = self.instance_id.clone();
+    fn connect_to_db(
+        &self,
+        host: &str,
+        name: &str,
+        username: &str,
+    ) -> Result<DbConnection, String> {
+        let instance_id = username.to_string();
         let creds_file = credentials::File::new(&instance_id);
 
         DbConnection::builder()
@@ -235,31 +212,6 @@ impl SpacetimeDBManager {
         } else {
             println!("Disconnected.");
             std::process::exit(0);
-        }
-    }
-
-    pub fn call_debug(&self) -> Result<(), String> {
-        godot_print!("Calling debug reducer...");
-
-        godot_print!("Connection: {}", self.connection.is_some());
-
-        // Call the debug reducer using the reducers field
-        match self.connection.as_ref().map(|c| c.reducers.debug()) {
-            Some(Ok(_)) => {
-                godot_print!("Debug reducer called successfully!");
-
-                Ok(())
-            }
-            Some(Err(e)) => {
-                let error_msg = format!("Failed to call debug reducer: {}", e);
-                godot_print!("{}", error_msg);
-                Err(error_msg)
-            }
-            None => {
-                let error_msg = "No connection available".to_string();
-                godot_print!("{}", error_msg);
-                Err(error_msg)
-            }
         }
     }
 

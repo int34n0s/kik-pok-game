@@ -1,12 +1,40 @@
-[gd_scene format=3 uid="uid://cim4ynxn2fawe"]
+[gd_scene load_steps=2 format=3 uid="uid://cim4ynxn2fawe"]
 
-[node name="LoginScreen" type="LoginScreen"]
-anchors_preset = -1
-anchor_left = 0.5
-anchor_top = 1.006
-anchor_right = 0.5
-anchor_bottom = 1.006
-offset_left = -576.0
-offset_top = -651.888
-offset_right = 579.0
-offset_bottom = 0.112
+[ext_resource type="Theme" uid="uid://cr825tg24nkiu" path="res://themes/menu/text_theme.tres" id="2_ebl7d"]
+
+[node name="LoginMenu" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(1100, 0)
+layout_mode = 2
+theme = ExtResource("2_ebl7d")
+
+[node name="LoginScreen" type="LoginScreen" parent="PanelContainer"]
+layout_mode = 2
+theme = ExtResource("2_ebl7d")
+
+[node name="Title" type="Label" parent="PanelContainer/LoginScreen"]
+layout_mode = 2
+theme = ExtResource("2_ebl7d")
+text = "Kik Pok Game"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="PanelContainer/LoginScreen"]
+layout_mode = 2
+theme = ExtResource("2_ebl7d")
+text = "Ready to connect"
+horizontal_alignment = 1
+
+[node name="UsernameInput" type="LineEdit" parent="PanelContainer/LoginScreen"]
+layout_mode = 2
+placeholder_text = "Enter your username"
+alignment = 1
+
+[node name="LoginButton" type="Button" parent="PanelContainer/LoginScreen"]
+layout_mode = 2
+text = "Login"

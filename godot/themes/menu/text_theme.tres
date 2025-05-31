@@ -1,0 +1,17 @@
+[gd_resource type="Theme" load_steps=6 format=3 uid="uid://cr825tg24nkiu"]
+
+[ext_resource type="StyleBox" uid="uid://c5g70h4e5hv30" path="res://themes/menu/button_primary.tres" id="1_tfr4s"]
+[ext_resource type="StyleBox" uid="uid://bklqvnt6xrwpi" path="res://themes/menu/label_primary.tres" id="2_fks3q"]
+[ext_resource type="StyleBox" uid="uid://dv0568jehns6g" path="res://themes/menu/line_edit_primary.tres" id="3_fkrp8"]
+[ext_resource type="StyleBox" uid="uid://d2yp1iceuwk4b" path="res://themes/menu/panel_container_primary.tres" id="4_g3wc8"]
+[ext_resource type="FontFile" uid="uid://dqoovl4fbxitg" path="res://assets/fonts/PixelOperator8.ttf" id="5_oiqah"]
+
+[resource]
+default_font = ExtResource("5_oiqah")
+default_font_size = 32
+Button/styles/normal = ExtResource("1_tfr4s")
+Label/font_sizes/font_size = 40
+Label/styles/normal = ExtResource("2_fks3q")
+LineEdit/styles/normal = ExtResource("3_fkrp8")
+PanelContainer/styles/panel = ExtResource("4_g3wc8")
+VBoxContainer/constants/separation = 20
