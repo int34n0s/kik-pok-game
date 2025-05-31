@@ -1,10 +1,14 @@
 use godot::prelude::*;
 
-pub mod player;
-pub mod spacetimedb_client;
-pub mod spacetimedb_manager;
+mod characters;
+mod ui;
+mod multiplayer;
 
-struct MyExtension;
+pub use multiplayer::*;
+pub use ui::*;
+pub use characters::*;
+
+struct KikPokEngine;
 
 #[gdextension]
-unsafe impl ExtensionLibrary for MyExtension {}
+unsafe impl ExtensionLibrary for KikPokEngine {}

@@ -10,3 +10,5 @@ crate-type = ["cdylib"]
 godot = "0.2.4"
 spacetimedb-client-api = "1.1.1"
 spacetimedb-sdk = "1.1.1"
+uuid = { version = "1.0", features = ["v4"] }
+fastrand = "2.0"

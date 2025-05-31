@@ -2946,9 +2946,11 @@ dependencies = [
 name = "rust"
 version = "0.1.0"
 dependencies = [
+ "fastrand",
  "godot",
  "spacetimedb-client-api",
  "spacetimedb-sdk",
+ "uuid",
 ]
 
 [[package]]
