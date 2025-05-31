@@ -1,13 +1,13 @@
 [gd_scene load_steps=28 format=3 uid="uid://djbd7unb37usl"]
 
-[ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/player.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" uid="uid://djk3o7lb4is77" path="res://scenes/world.tscn" id="1_sugp2"]
-[ext_resource type="Script" uid="uid://dq0g6myuftsx4" path="res://scripts/game_mamager.gd" id="1_tipki"]
+[ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/characters/player.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://djk3o7lb4is77" path="res://scenes/environment/world.tscn" id="1_sugp2"]
+[ext_resource type="Script" uid="uid://dq0g6myuftsx4" path="res://scripts/utils/game_mamager.gd" id="1_tipki"]
 [ext_resource type="FontFile" uid="uid://bi5ot7bp77hp1" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="3_jyhfs"]
-[ext_resource type="PackedScene" uid="uid://dvnr05iprl34b" path="res://scenes/coin.tscn" id="4_jyhfs"]
-[ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/killzone.tscn" id="5_tbgi4"]
-[ext_resource type="PackedScene" uid="uid://diiskamvk2lsv" path="res://scenes/platform.tscn" id="6_tefeu"]
-[ext_resource type="PackedScene" uid="uid://ynngt8156yje" path="res://scenes/green_slime.tscn" id="7_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://dvnr05iprl34b" path="res://scenes/entities/coin.tscn" id="4_jyhfs"]
+[ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/utils/killzone.tscn" id="5_tbgi4"]
+[ext_resource type="PackedScene" uid="uid://diiskamvk2lsv" path="res://scenes/environment/platform.tscn" id="6_tefeu"]
+[ext_resource type="PackedScene" uid="uid://ynngt8156yje" path="res://scenes/characters/green_slime.tscn" id="7_o6xl0"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_tbgi4"]
 
