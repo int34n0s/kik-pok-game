@@ -1,9 +1,8 @@
-[gd_scene load_steps=28 format=3 uid="uid://djbd7unb37usl"]
+[gd_scene load_steps=27 format=3 uid="uid://djbd7unb37usl"]
 
 [ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/characters/player.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://23ginfucreyv" path="res://scenes/utils/game_manager.tscn" id="1_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://djk3o7lb4is77" path="res://scenes/environment/world.tscn" id="1_sugp2"]
-[ext_resource type="Script" uid="uid://dq0g6myuftsx4" path="res://scripts/utils/game_mamager.gd" id="1_tipki"]
-[ext_resource type="FontFile" uid="uid://bi5ot7bp77hp1" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="3_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://dvnr05iprl34b" path="res://scenes/entities/coin.tscn" id="4_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/utils/killzone.tscn" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://diiskamvk2lsv" path="res://scenes/environment/platform.tscn" id="6_tefeu"]
@@ -241,21 +240,13 @@ _data = {
 
 [node name="Main" type="Node2D"]
 
-[node name="GameManager" type="Node" parent="."]
-unique_name_in_owner = true
-script = ExtResource("1_tipki")
+[node name="GameManager" parent="." groups=["manager"] instance=ExtResource("1_o6xl0")]
 
-[node name="ScoreLabel" type="Label" parent="GameManager"]
-offset_left = 512.0
-offset_top = -384.0
-offset_right = 596.0
-offset_bottom = -354.0
-theme_override_colors/font_color = Color(0.026425, 0.340166, 0.700941, 1)
-theme_override_fonts/font = ExtResource("3_jyhfs")
-theme_override_font_sizes/font_size = 8
-text = "You collected X coins!"
-horizontal_alignment = 1
-autowrap_mode = 2
+[node name="ScoreLabel" parent="GameManager" index="0"]
+offset_left = -134.0
+offset_top = -106.0
+offset_right = -50.0
+offset_bottom = -76.0
 
 [node name="TileMapLayer" parent="." instance=ExtResource("1_sugp2")]
 position = Vector2(-8, -3)
@@ -388,3 +379,5 @@ position = Vector2(784, -296)
 
 [node name="Coin12" parent="Coins" instance=ExtResource("4_jyhfs")]
 position = Vector2(882, -312)
+
+[editable path="GameManager"]

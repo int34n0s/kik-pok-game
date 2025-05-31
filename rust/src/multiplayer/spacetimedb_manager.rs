@@ -1,8 +1,12 @@
 use crate::multiplayer::spacetimedb_client;
 use crate::register_player_reducer::register_player;
 use crate::update_position_reducer::update_position;
-use crate::{CONNECTION_STATE, DbConnection, Direction, ErrorContext, Positioning};
-use crate::{PlayerTableAccess, WorldSceneTableAccess};
+
+use crate::{
+    CONNECTION_STATE, DbConnection, Direction, ErrorContext, PlayerScoreTableAccess, Positioning,
+    collect_coin, register_coin,
+};
+use crate::{CoinTableAccess, DbVector2, PlayerTableAccess, WorldSceneTableAccess};
 
 use std::sync::atomic::Ordering;
 
@@ -24,6 +28,7 @@ pub struct SpacetimeDBManager {
     connection: Option<DbConnection>,
     state: ConnectionState,
     scene_id: Option<u32>,
+    player_name: Option<String>,
 }
 
 impl SpacetimeDBManager {
@@ -57,6 +62,7 @@ impl SpacetimeDBManager {
             connection,
             state: ConnectionState::Disconnected,
             scene_id: None,
+            player_name: None,
         }
     }
 
@@ -76,6 +82,7 @@ impl SpacetimeDBManager {
         }
 
         self.state = ConnectionState::Connecting;
+        self.player_name = Some(username.to_string());
 
         match self.connect_to_db_with_creds(username) {
             Ok(connection) => {
@@ -105,6 +112,18 @@ impl SpacetimeDBManager {
                 connection
                     .subscription_builder()
                     .subscribe("SELECT * FROM world_scene");
+
+                connection
+                    .subscription_builder()
+                    .subscribe("SELECT * FROM player_score");
+
+                connection
+                    .subscription_builder()
+                    .subscribe("SELECT * FROM coin");
+
+                connection.reducers.on_collect_coin(|_x, _x1| {
+                    CONNECTION_STATE.store(2, Ordering::SeqCst);
+                });
 
                 self.connection = Some(connection);
                 self.state = ConnectionState::Connected;
@@ -281,6 +300,127 @@ impl SpacetimeDBManager {
                 .player()
                 .iter()
                 .any(|player| player.name == username)
+        } else {
+            false
+        }
+    }
+
+    pub fn get_player_name(&self) -> GString {
+        self.player_name
+            .as_ref()
+            .map(|name| name.as_str().into())
+            .unwrap_or_else(|| "Unknown".into())
+    }
+
+    pub fn collect_coin_at_position(&self, position: Vector2) -> Result<(), String> {
+        if self.state != ConnectionState::LoggedIn {
+            return Err("Not logged in".to_string());
+        }
+
+        let connection = self.connection.as_ref().ok_or("No connection available")?;
+        let db_position = DbVector2 {
+            x: position.x,
+            y: position.y,
+        };
+
+        match connection.reducers.collect_coin(db_position) {
+            Ok(_) => {
+                godot_print!(
+                    "Coin collection request sent successfully for position ({}, {})!",
+                    position.x,
+                    position.y
+                );
+                Ok(())
+            }
+            Err(e) => {
+                let error_msg = format!(
+                    "Failed to collect coin at ({}, {}): {}",
+                    position.x, position.y, e
+                );
+                godot_print!("{}", error_msg);
+                Err(error_msg)
+            }
+        }
+    }
+
+    pub fn register_coin_at_position(
+        &self,
+        position: Vector2,
+        scene_id: u32,
+    ) -> Result<(), String> {
+        if !self.is_connected() {
+            return Err("Not connected".to_string());
+        }
+
+        let connection = self.connection.as_ref().ok_or("No connection available")?;
+        let db_position = DbVector2 {
+            x: position.x,
+            y: position.y,
+        };
+
+        match connection.reducers.register_coin(db_position, scene_id) {
+            Ok(_) => {
+                godot_print!(
+                    "Coin registration request sent for position ({}, {})!",
+                    position.x,
+                    position.y
+                );
+                Ok(())
+            }
+            Err(e) => {
+                let error_msg = format!(
+                    "Failed to register coin at ({}, {}): {}",
+                    position.x, position.y, e
+                );
+                godot_print!("{}", error_msg);
+                Err(error_msg)
+            }
+        }
+    }
+
+    pub fn get_all_scores(&self) -> Vec<spacetimedb_client::player_score_type::PlayerScore> {
+        if let Some(connection) = &self.connection {
+            connection.db().player_score().iter().collect()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn get_my_score(&self) -> u32 {
+        if let Some(connection) = &self.connection {
+            if let Some(score) = connection
+                .db()
+                .player_score()
+                .iter()
+                .find(|s| s.player_identity == connection.identity())
+            {
+                return score.coins_collected;
+            }
+        }
+        0
+    }
+
+    pub fn get_all_coins(&self) -> Vec<spacetimedb_client::coin_type::Coin> {
+        if let Some(connection) = &self.connection {
+            connection.db().coin().iter().collect()
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn is_coin_collected_at_position(&self, position: Vector2) -> bool {
+        if let Some(connection) = &self.connection {
+            let db_position = DbVector2 {
+                x: position.x,
+                y: position.y,
+            };
+            connection
+                .db()
+                .coin()
+                .iter()
+                .find(|coin| coin.position.x == db_position.x && coin.position.y == db_position.y)
+                .map(|coin| coin.is_collected)
+                .unwrap_or(false)
         } else {
             false
         }

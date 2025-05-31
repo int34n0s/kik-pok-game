@@ -84,6 +84,11 @@ impl Player {
     }
 
     #[func]
+    pub fn is_player_local(&self) -> bool {
+        self.is_local_player
+    }
+
+    #[func]
     pub fn set_player_state(&mut self, state: Gd<PlayerState>) {
         let state = state.bind();
 
