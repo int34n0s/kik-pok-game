@@ -1,4 +1,4 @@
-use spacetimedb::{Identity, SpacetimeType, ReducerContext, Table, Timestamp};
+use spacetimedb::{Identity, SpacetimeType, ReducerContext, Table, Timestamp, TryInsertError};
 
 // We're using this table as a singleton, so in this table
 // there only be one element where the `id` is 0.
@@ -46,6 +46,7 @@ pub struct Food {
 }
 
 #[spacetimedb::table(name = player, public)]
+#[spacetimedb::table(name = logged_out_player)]
 #[derive(Debug, Clone)]
 pub struct Player {
     #[primary_key]
@@ -59,5 +60,91 @@ pub struct Player {
 #[spacetimedb::reducer]
 pub fn debug(ctx: &ReducerContext) -> Result<(), String> {
     log::info!("This reducer was called by {}.", ctx.sender);
+    Ok(())
+}
+
+#[spacetimedb::reducer(init)]
+pub fn init(ctx: &ReducerContext) -> Result<(), String> {
+    log::info!("Initializing...");
+    
+    ctx.db.config().try_insert(Config {
+        id: 0,
+        world_size: 1000,
+    })?;
+
+    Ok(())
+}
+
+#[spacetimedb::reducer(client_connected)]
+pub fn identity_connected(ctx: &ReducerContext) -> Result<(), String> {
+    log::info!("The identity_connected reducer was called by {}.", ctx.sender);
+
+    Ok(())
+}
+
+#[spacetimedb::reducer(client_disconnected)]
+pub fn identity_disconnected(ctx: &ReducerContext) -> Result<(), String> {
+    log::info!("The identity_disconnected reducer was called by {}.", ctx.sender);
+
+    if let Some(player) = ctx.db.player().identity().find(&ctx.sender) {
+        // Remove player's entity if it exists
+        ctx.db.entity().entity_id().delete(&player.player_id);
+        
+        // Move player to logged_out_player table
+        ctx.db.logged_out_player().insert(player);
+        ctx.db.player().identity().delete(&ctx.sender);
+    }
+
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn register_player(ctx: &ReducerContext, name: String) -> Result<(), String> {
+    log::info!("Player {} is registering with name: {}", ctx.sender, name);
+    
+    // Check if player already exists
+    if ctx.db.player().identity().find(&ctx.sender).is_some() {
+        return Err("Player already registered".to_string());
+    }
+    
+    // Validate name
+    if name.trim().is_empty() {
+        return Err("Name cannot be empty".to_string());
+    }
+    
+    if name.len() > 20 {
+        return Err("Name too long (max 20 characters)".to_string());
+    }
+    
+    match ctx.db.player().try_insert(Player {
+        identity: ctx.sender,
+        player_id: 0, // auto_inc will set this
+        name: name.trim().to_string(),
+    }) {
+        Ok(player) => log::info!("Player {} registered successfully with name: {} and id: {}", player.identity, player.name, player.player_id),
+        Err(e) => log::error!("Error registering player: {:?}", e),
+    }
+    
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn update_position(ctx: &ReducerContext, x: f32, y: f32) -> Result<(), String> {
+    let player = ctx.db.player().identity().find(&ctx.sender)
+        .ok_or("Player not registered")?;
+    
+    if let Some(mut entity) = ctx.db.entity().entity_id().find(&player.player_id) {
+        entity.position.x = x;
+        entity.position.y = y;
+        
+        ctx.db.entity().entity_id().update(entity);
+    } else {
+        ctx.db.entity().try_insert(Entity {
+            entity_id: player.player_id, // Use player_id as entity_id for simplicity
+            position: DbVector2 { x, y },
+            mass: 10,
+        })?;
+    }
+    
     Ok(())
 }
