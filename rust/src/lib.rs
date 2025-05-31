@@ -18,7 +18,6 @@ use lazy_static::lazy_static;
 lazy_static! {
     pub static ref GLOBAL_CONNECTION: Mutex<SpacetimeDBManager> =
         Mutex::new(SpacetimeDBManager::new("127.0.0.1:3000", "kik-pok"));
-
     pub static ref CONNECTION_STATE: AtomicU8 = AtomicU8::new(0);
 }
 
