@@ -1,5 +1,4 @@
-use crate::{CONNECTION_STATE, ConnectionState, Direction, GLOBAL_CONNECTION};
-use std::sync::atomic::Ordering;
+use crate::{ConnectionState, Direction, GLOBAL_CONNECTION};
 
 use godot::classes::{Button, IVBoxContainer, Label, LineEdit, VBoxContainer};
 use godot::prelude::*;
@@ -28,19 +27,15 @@ impl IVBoxContainer for LoginScreen {
 
     fn process(&mut self, _delta: f64) {
         let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-
-        if connection.is_connected() {
-            if let Err(e) = connection.tick() {
-                self.set_status(&format!("Connection error: {}", e));
-            }
+        if !connection.is_connected() {
+            return;
         }
 
-        if CONNECTION_STATE.load(Ordering::SeqCst) != 0 {
-            CONNECTION_STATE.store(0, Ordering::SeqCst);
-            connection.state = ConnectionState::LoggedIn;
+        if let Err(e) = connection.tick() {
+            self.set_status(&format!("Connection error: {}", e));
         }
 
-        if connection.is_logged_in() {
+        if connection.check_and_login() {
             self.transition_to_game();
         }
     }
@@ -89,47 +84,36 @@ impl LoginScreen {
 
             self.set_status("Connecting to server...");
 
-            {
-                let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-                match connection.connect("127.0.0.1:3000", "kik-pok", &username) {
-                    Ok(_) => {
-                        self.set_status("Connected! Registering player...");
-                    }
-                    Err(e) => {
-                        self.set_status(&format!("Connection failed: {}", e));
-                    }
-                }
-            }
-
-            {
-                let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-                match connection.register_player(username, 1, Direction::Right) {
-                    Ok(_) => {
-                        self.set_status("Registration request sent...");
-                    }
-                    Err(e) => {
-                        self.set_status(&format!("Registration failed: {}", e));
-                    }
-                }
-            }
-        }
-    }
-
-    #[func]
-    fn on_player_registered(&mut self, name: GString, scene_id: i32) {
-        godot_print!(
-            "Received player_registered signal: {} in scene {}",
-            name,
-            scene_id
-        );
-
-        // Update the connection state to LoggedIn
-        {
             let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-            connection.set_state(ConnectionState::LoggedIn);
-        }
 
-        self.set_status("Registration successful! Loading game...");
+            if !connection.is_connected() {
+                self.set_status("Connection not available");
+                return;
+            }
+
+            if connection.is_player_logged_in(&username) {
+                self.set_status("A player with this username is already logged in");
+                return;
+            }
+
+            match connection.connect(&username) {
+                Ok(_) => {
+                    self.set_status("Connected! Registering player...");
+                }
+                Err(e) => {
+                    self.set_status(&format!("Connection failed: {}", e));
+                }
+            }
+
+            match connection.register_player(username, 1, Direction::Right) {
+                Ok(_) => {
+                    self.set_status("Registration request sent...");
+                }
+                Err(e) => {
+                    self.set_status(&format!("Registration failed: {}", e));
+                }
+            }
+        }
     }
 
     fn set_status(&mut self, message: &str) {
