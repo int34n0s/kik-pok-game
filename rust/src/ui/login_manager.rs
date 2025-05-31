@@ -74,44 +74,47 @@ impl LoginScreen {
 
     #[func]
     fn on_login_pressed(&mut self) {
-        if let Some(username_input) = &self.username_input {
-            let username = username_input.get_text().to_string();
+        let Some(username_input) = &self.username_input else {
+            godot_error!("Expected username_input");
 
-            if username.trim().is_empty() {
-                self.set_status("Please enter a username");
-                return;
+            return;
+        };
+
+        let username = username_input.get_text().to_string();
+
+        if username.trim().is_empty() {
+            self.set_status("Please enter a username");
+            return;
+        }
+
+        self.set_status("Connecting to server...");
+
+        let mut connection = GLOBAL_CONNECTION.lock().unwrap();
+        if !connection.is_connected() {
+            self.set_status("Connection not available");
+            return;
+        }
+
+        if connection.is_player_logged_in(&username) {
+            self.set_status("A player with this username is already logged in");
+            return;
+        }
+
+        match connection.connect(&username) {
+            Ok(_) => {
+                self.set_status("Connected! Registering player...");
             }
-
-            self.set_status("Connecting to server...");
-
-            let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-
-            if !connection.is_connected() {
-                self.set_status("Connection not available");
-                return;
+            Err(e) => {
+                self.set_status(&format!("Connection failed: {}", e));
             }
+        }
 
-            if connection.is_player_logged_in(&username) {
-                self.set_status("A player with this username is already logged in");
-                return;
+        match connection.register_player(username, 1, Direction::Right) {
+            Ok(_) => {
+                self.set_status("Registration request sent...");
             }
-
-            match connection.connect(&username) {
-                Ok(_) => {
-                    self.set_status("Connected! Registering player...");
-                }
-                Err(e) => {
-                    self.set_status(&format!("Connection failed: {}", e));
-                }
-            }
-
-            match connection.register_player(username, 1, Direction::Right) {
-                Ok(_) => {
-                    self.set_status("Registration request sent...");
-                }
-                Err(e) => {
-                    self.set_status(&format!("Registration failed: {}", e));
-                }
+            Err(e) => {
+                self.set_status(&format!("Registration failed: {}", e));
             }
         }
     }

@@ -1,8 +1,8 @@
-use crate::PlayerTableAccess;
 use crate::multiplayer::spacetimedb_client;
 use crate::register_player_reducer::register_player;
 use crate::update_position_reducer::update_position;
 use crate::{CONNECTION_STATE, DbConnection, Direction, ErrorContext, Positioning};
+use crate::{PlayerTableAccess, WorldSceneTableAccess};
 
 use std::sync::atomic::Ordering;
 
@@ -23,6 +23,7 @@ pub struct SpacetimeDBManager {
     db_name: String,
     connection: Option<DbConnection>,
     state: ConnectionState,
+    scene_id: Option<u32>,
 }
 
 impl SpacetimeDBManager {
@@ -55,6 +56,7 @@ impl SpacetimeDBManager {
             db_name,
             connection,
             state: ConnectionState::Disconnected,
+            scene_id: None,
         }
     }
 
@@ -62,13 +64,13 @@ impl SpacetimeDBManager {
         if self.state != ConnectionState::Disconnected {
             return Err("Already connected or connecting".to_string());
         }
-        
+
         if self.connection.is_none() {
             godot_error!("Expected to be connected to SpacetimeDB at {}", self.host);
-            
+
             return Ok(());
         }
-        
+
         if let Some(connection) = &self.connection {
             connection.disconnect().map_err(|e| e.to_string())?;
         }
@@ -100,6 +102,10 @@ impl SpacetimeDBManager {
                     .subscription_builder()
                     .subscribe("SELECT * FROM player");
 
+                connection
+                    .subscription_builder()
+                    .subscribe("SELECT * FROM world_scene");
+
                 self.connection = Some(connection);
                 self.state = ConnectionState::Connected;
 
@@ -108,7 +114,7 @@ impl SpacetimeDBManager {
             Err(e) => {
                 godot_print!("Failed to connect to SpacetimeDB: {}", e);
                 self.state = ConnectionState::Disconnected;
-                
+
                 Err(e)
             }
         }
@@ -187,6 +193,8 @@ impl SpacetimeDBManager {
             Ok(_) => {
                 godot_print!("Player registration request sent successfully!");
 
+                self.scene_id = Some(scene_id);
+
                 Ok(())
             }
             Err(e) => {
@@ -224,6 +232,21 @@ impl SpacetimeDBManager {
                 .collect()
         } else {
             Vec::new()
+        }
+    }
+
+    pub fn get_spawn_point(&self) -> Option<Vector2> {
+        let scene_id = self.scene_id?;
+
+        if let Some(connection) = &self.connection {
+            connection
+                .db()
+                .world_scene()
+                .iter()
+                .find(|x| x.scene_id == scene_id)
+                .map(|scene| Vector2::new(scene.spawn_point.x, scene.spawn_point.y))
+        } else {
+            None
         }
     }
 
