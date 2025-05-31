@@ -1,6 +1,6 @@
 mod multiplayer_manager;
-mod spacetimedb_manager;
 mod spacetimedb_client;
+mod spacetimedb_manager;
 
 pub use multiplayer_manager::*;
 pub use spacetimedb_client::*;

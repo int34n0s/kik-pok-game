@@ -263,7 +263,7 @@ position = Vector2(-8, -3)
 [node name="MultiplayerManager" type="MultiplayerManager" parent="."]
 
 [node name="Player" parent="MultiplayerManager" instance=ExtResource("1_o5qli")]
-position = Vector2(-4, -29)
+position = Vector2(-15, -25)
 
 [node name="Camera2D" type="Camera2D" parent="MultiplayerManager/Player"]
 zoom = Vector2(4, 4)

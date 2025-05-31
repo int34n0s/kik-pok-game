@@ -1,0 +1,23 @@
+[config]
+default_to_workspace = false
+min_version = "0.36.0"
+
+[env]
+SPACETIME_CLIENT_DIR = "rust/src/multiplayer/spacetimedb_client"
+
+[tasks.update-sdk]
+description = "Update SpacetimeDB client SDK by regenerating Rust bindings"
+script = [
+    "echo 'Updating SpacetimeDB client SDK...'",
+    "spacetime generate -p server -o ${SPACETIME_CLIENT_DIR} --lang rust",
+    "echo 'SpacetimeDB client SDK updated successfully!'"
+]
+
+[tasks.default]
+description = "Show available tasks"
+script = [
+    "echo 'Available tasks:'",
+    "echo '  update-sdk    - Update SpacetimeDB client SDK'",
+    "echo ''",
+    "echo 'Usage: cargo make <task-name>'"
+] 

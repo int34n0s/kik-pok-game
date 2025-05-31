@@ -1,0 +1,10 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://35hfvqpqx787"]
+
+[ext_resource type="StyleBox" uid="uid://k630rtcwuktc" path="res://themes/player/label_primary.tres" id="1_e7kun"]
+[ext_resource type="FontFile" uid="uid://dqoovl4fbxitg" path="res://assets/fonts/PixelOperator8.ttf" id="2_g45ax"]
+
+[resource]
+default_font = ExtResource("2_g45ax")
+Label/colors/font_color = Color(0.621292, 0.0879178, 0.0941316, 1)
+Label/font_sizes/font_size = 8
+Label/styles/normal = ExtResource("1_e7kun")

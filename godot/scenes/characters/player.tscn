@@ -1,6 +1,7 @@
-[gd_scene load_steps=25 format=3 uid="uid://cn4kx2e0wrut1"]
+[gd_scene load_steps=26 format=3 uid="uid://cn4kx2e0wrut1"]
 
 [ext_resource type="Texture2D" uid="uid://b1at3rt6lrilj" path="res://assets/sprites/knight.png" id="1_3vyb7"]
+[ext_resource type="Theme" uid="uid://35hfvqpqx787" path="res://themes/player/player_primary.tres" id="2_yewv4"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g2els"]
 atlas = ExtResource("1_3vyb7")
@@ -183,3 +184,14 @@ autoplay = "idle"
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -5)
 shape = SubResource("CircleShape2D_fjrip")
+
+[node name="PlayerName" type="Label" parent="."]
+offset_left = -36.0
+offset_top = -30.0
+offset_right = 36.0
+offset_bottom = -22.0
+theme = ExtResource("2_yewv4")
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 1
+clip_text = true
