@@ -1,7 +1,6 @@
-[gd_scene load_steps=21 format=3 uid="uid://dvnr05iprl34b"]
+[gd_scene load_steps=20 format=3 uid="uid://dvnr05iprl34b"]
 
 [ext_resource type="Texture2D" uid="uid://dcn7de87cau06" path="res://assets/sprites/coin.png" id="1_0p3oi"]
-[ext_resource type="Script" uid="uid://dmk2kvopek0sn" path="res://scripts/entities/coin.gd" id="1_11l1o"]
 [ext_resource type="AudioStream" uid="uid://dk3pv4i6pjsyk" path="res://assets/sounds/coin.wav" id="3_ycy6m"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_jmbhh"]
@@ -197,9 +196,8 @@ _data = {
 &"pickup": SubResource("Animation_3am43")
 }
 
-[node name="Coin" type="Area2D"]
+[node name="Coin" type="CoinArea"]
 collision_mask = 2
-script = ExtResource("1_11l1o")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_bujj4")
