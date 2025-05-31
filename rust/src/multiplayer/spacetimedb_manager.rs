@@ -1,12 +1,13 @@
 use crate::PlayerTableAccess;
+use crate::multiplayer::spacetimedb_client;
 use crate::register_player_reducer::register_player;
 use crate::update_position_reducer::update_position;
 use crate::{CONNECTION_STATE, DbConnection, Direction, ErrorContext, Positioning};
+
 use std::sync::atomic::Ordering;
 
 use godot::prelude::*;
 
-use crate::multiplayer::spacetimedb_client;
 use spacetimedb_sdk::{DbContext, Error, Table, credentials};
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -18,52 +19,81 @@ pub enum ConnectionState {
 }
 
 pub struct SpacetimeDBManager {
-    pub connection: Option<DbConnection>,
-    pub state: ConnectionState,
-}
-
-impl Default for SpacetimeDBManager {
-    fn default() -> Self {
-        Self::new()
-    }
+    host: String,
+    db_name: String,
+    connection: Option<DbConnection>,
+    state: ConnectionState,
 }
 
 impl SpacetimeDBManager {
-    pub fn new() -> Self {
-        Self {
-            connection: None,
-            state: ConnectionState::Disconnected,
-        }
-    }
-
-    pub fn connect(&mut self, host: &str, db_name: &str, username: &str) -> Result<(), String> {
-        if self.state != ConnectionState::Disconnected {
-            return Err("Already connected or connecting".to_string());
-        }
-
+    pub fn new(host: &str, db_name: &str) -> Self {
         godot_print!(
             "Connecting to SpacetimeDB at {} with database {}",
             host,
             db_name
         );
 
+        let host = format!("http://{}", host);
+        let db_name = db_name.to_string();
+
+        let connection = match Self::connect_to_db(&host, &db_name) {
+            Ok(conn) => {
+                conn.subscription_builder()
+                    .subscribe("SELECT * FROM player");
+
+                Some(conn)
+            }
+            Err(e) => {
+                godot_error!("Couldn't connect to db {}: {}", db_name, e);
+
+                None
+            }
+        };
+
+        Self {
+            host,
+            db_name,
+            connection,
+            state: ConnectionState::Disconnected,
+        }
+    }
+
+    pub fn connect(&mut self, username: &str) -> Result<(), String> {
+        if self.state != ConnectionState::Disconnected {
+            return Err("Already connected or connecting".to_string());
+        }
+        
+        if self.connection.is_none() {
+            godot_error!("Expected to be connected to SpacetimeDB at {}", self.host);
+            
+            return Ok(());
+        }
+        
+        if let Some(connection) = &self.connection {
+            connection.disconnect().map_err(|e| e.to_string())?;
+        }
+
         self.state = ConnectionState::Connecting;
 
-        match self.connect_to_db(&format!("http://{}", host), db_name, username) {
+        match self.connect_to_db_with_creds(username) {
             Ok(connection) => {
                 godot_print!("Successfully connected to SpacetimeDB");
 
                 connection
                     .reducers
-                    .on_register_player(|_ctx, name, scene_id, direction| {
-                        godot_print!(
-                            "Player registration event: {} in scene {} with direction {:?}",
-                            name,
-                            scene_id,
-                            direction,
-                        );
-
-                        CONNECTION_STATE.store(1, Ordering::SeqCst);
+                    .on_register_player(|ctx, _name, _scene_id, _direction| {
+                        match &ctx.event.status {
+                            spacetimedb_sdk::Status::Committed => {
+                                godot_print!("Player registration committed successfully");
+                                CONNECTION_STATE.store(1, Ordering::SeqCst);
+                            }
+                            spacetimedb_sdk::Status::Failed(e) => {
+                                godot_print!("Player registration failed: {}", e);
+                            }
+                            spacetimedb_sdk::Status::OutOfEnergy => {
+                                godot_print!("Player registration failed: Out of energy");
+                            }
+                        }
                     });
 
                 connection
@@ -78,11 +108,70 @@ impl SpacetimeDBManager {
             Err(e) => {
                 godot_print!("Failed to connect to SpacetimeDB: {}", e);
                 self.state = ConnectionState::Disconnected;
+                
                 Err(e)
             }
         }
     }
 
+    fn connect_to_db_with_creds(&self, username: &str) -> Result<DbConnection, String> {
+        let instance_id = username.to_string();
+        let creds_file = credentials::File::new(&instance_id);
+
+        DbConnection::builder()
+            .on_connect(move |_ctx, _identity, token| {
+                let creds_store = credentials::File::new(&instance_id);
+                if let Err(e) = creds_store.save(token) {
+                    godot_print!("Failed to save credentials: {:?}", e);
+                }
+            })
+            .on_connect_error(Self::on_connect_error)
+            .on_disconnect(Self::on_disconnected)
+            .with_token(creds_file.load().unwrap_or_default())
+            .with_module_name(&self.db_name)
+            .with_uri(&self.host)
+            .build()
+            .map_err(|e| e.to_string())
+    }
+
+    fn connect_to_db(host: &str, name: &str) -> Result<DbConnection, String> {
+        DbConnection::builder()
+            .on_connect_error(Self::on_connect_error)
+            .on_disconnect(Self::on_disconnected)
+            .with_module_name(name)
+            .with_uri(host)
+            .build()
+            .map_err(|e| e.to_string())
+    }
+
+    /// Our `on_connect_error` callback: print the error, then exit the process.
+    fn on_connect_error(_ctx: &ErrorContext, err: Error) {
+        godot_print!("Connection error: {:?}", err);
+    }
+
+    /// Our `on_disconnect` callback: print a note, then exit the process.
+    fn on_disconnected(_ctx: &ErrorContext, err: Option<Error>) {
+        if let Some(err) = err {
+            godot_print!("Disconnected: {}", err);
+        } else {
+            godot_print!("Disconnected.");
+        }
+    }
+
+    pub fn is_connected(&self) -> bool {
+        self.connection.is_some()
+    }
+
+    pub fn is_logged_in(&self) -> bool {
+        self.state == ConnectionState::LoggedIn
+    }
+
+    pub fn get_connection_state(&self) -> ConnectionState {
+        self.state
+    }
+}
+
+impl SpacetimeDBManager {
     pub fn register_player(
         &mut self,
         username: String,
@@ -125,10 +214,6 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn get_connection(&self) -> Option<&DbConnection> {
-        self.connection.as_ref()
-    }
-
     pub fn get_other_players(&self) -> Vec<spacetimedb_client::player_type::Player> {
         if let Some(connection) = &self.connection {
             connection
@@ -142,83 +227,39 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn get_connection_state(&self) -> ConnectionState {
-        self.state
-    }
-
-    pub fn is_connected(&self) -> bool {
-        matches!(
-            self.state,
-            ConnectionState::Connected | ConnectionState::LoggedIn
-        )
-    }
-
-    pub fn is_logged_in(&self) -> bool {
-        self.state == ConnectionState::LoggedIn
-    }
-
-    pub fn set_state(&mut self, state: ConnectionState) {
-        self.state = state;
-    }
-
-    /// Load credentials from a file and connect to the database.
-    fn connect_to_db(
-        &self,
-        host: &str,
-        name: &str,
-        username: &str,
-    ) -> Result<DbConnection, String> {
-        let instance_id = username.to_string();
-        let creds_file = credentials::File::new(&instance_id);
-
-        DbConnection::builder()
-            // Register our `on_connect` callback, which will save our auth token.
-            .on_connect(move |_ctx, _identity, token| {
-                let creds_store = credentials::File::new(&instance_id);
-                if let Err(e) = creds_store.save(token) {
-                    eprintln!("Failed to save credentials: {:?}", e);
-                }
-            })
-            // Register our `on_connect_error` callback, which will print a message, then exit the process.
-            .on_connect_error(Self::on_connect_error)
-            // Our `on_disconnect` callback, which will print a message, then exit the process.
-            .on_disconnect(Self::on_disconnected)
-            // If the user has previously connected, we'll have saved a token in the `on_connect` callback.
-            // In that case, we'll load it and pass it to `with_token`,
-            // so we can re-authenticate as the same `Identity`.
-            .with_token(
-                creds_file.load().unwrap_or_default(), // Use empty string if no credentials exist yet
-            )
-            // Set the database name we chose when we called `spacetime publish`.
-            .with_module_name(name)
-            // Set the URI of the SpacetimeDB host that's running our database.
-            .with_uri(host)
-            // Finalize configuration and connect!
-            .build()
-            .map_err(|e| e.to_string())
-    }
-
-    /// Our `on_connect_error` callback: print the error, then exit the process.
-    fn on_connect_error(_ctx: &ErrorContext, err: Error) {
-        eprintln!("Connection error: {:?}", err);
-        std::process::exit(1);
-    }
-
-    /// Our `on_disconnect` callback: print a note, then exit the process.
-    fn on_disconnected(_ctx: &ErrorContext, err: Option<Error>) {
-        if let Some(err) = err {
-            eprintln!("Disconnected: {}", err);
-            std::process::exit(1);
-        } else {
-            println!("Disconnected.");
-            std::process::exit(0);
-        }
-    }
-
     pub fn tick(&self) -> Result<(), String> {
         match &self.connection {
             Some(connection) => connection.frame_tick().map_err(|e| e.to_string()),
             None => Err("No connection available".to_string()),
+        }
+    }
+
+    pub fn check_and_login(&mut self) -> bool {
+        if CONNECTION_STATE.load(Ordering::SeqCst) != 0 {
+            CONNECTION_STATE.store(0, Ordering::SeqCst);
+            self.state = ConnectionState::LoggedIn;
+
+            return true;
+        }
+
+        false
+    }
+
+    pub fn is_player_logged_in(&self, username: &str) -> bool {
+        if let Some(connection) = &self.connection {
+            godot_print!(
+                "Username: {}, {:?}",
+                username,
+                connection.db().player().iter().collect::<Vec<_>>()
+            );
+
+            connection
+                .db()
+                .player()
+                .iter()
+                .any(|player| player.name == username)
+        } else {
+            false
         }
     }
 }

@@ -22,6 +22,10 @@ pub fn identity_connected(ctx: &ReducerContext) -> Result<(), String> {
         "The identity_connected reducer was called by {}.",
         ctx.sender
     );
+    
+    if ctx.db.player().iter().any(|p| p.identity == ctx.sender) {
+        return Err("Player already in the game".to_string());
+    }
 
     if ctx.db.logged_out_player().identity().find(ctx.sender).is_some() {
         ctx.db.logged_out_player().identity().delete(ctx.sender);
@@ -156,16 +160,16 @@ pub fn update_position(ctx: &ReducerContext, positioning: Positioning) -> Result
 
     player.positioning = positioning;
 
-    let player = ctx.db.player().identity().update(player);
+    let _player = ctx.db.player().identity().update(player);
 
-    log::trace!(
-        "Updated position for player {} to coordinates: ({}, {}), direction: {:?}, on_floor: {}",
-        ctx.sender,
-        player.positioning.coordinates.x,
-        player.positioning.coordinates.y,
-        player.positioning.direction,
-        player.positioning.in_on_floor
-    );
+    // log::trace!(
+    //     "Updated position for player {} to coordinates: ({}, {}), direction: {:?}, on_floor: {}",
+    //     ctx.sender,
+    //     _player.positioning.coordinates.x,
+    //     _player.positioning.coordinates.y,
+    //     _player.positioning.direction,
+    //     _player.positioning.in_on_floor
+    // );
 
     Ok(())
 }
