@@ -243,10 +243,10 @@ _data = {
 [node name="GameManager" parent="." groups=["manager"] instance=ExtResource("1_o6xl0")]
 
 [node name="ScoreLabel" parent="GameManager" index="0"]
-offset_left = -134.0
-offset_top = -106.0
-offset_right = -50.0
-offset_bottom = -76.0
+offset_left = 508.0
+offset_top = -404.0
+offset_right = 592.0
+offset_bottom = -374.0
 
 [node name="TileMapLayer" parent="." instance=ExtResource("1_sugp2")]
 position = Vector2(-8, -3)

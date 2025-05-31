@@ -1,11 +1,14 @@
-use crate::{ConnectionState, Direction, GLOBAL_CONNECTION};
+use crate::{ConnectionState, Direction, GLOBAL_CONNECTION, initialize_connection};
 
 use godot::classes::{Button, IVBoxContainer, Label, LineEdit, VBoxContainer};
-use godot::prelude::*;
+use godot::global::{godot_error, godot_print};
+use godot::obj::{Base, Gd, WithBaseField};
+use godot::register::{godot_api, GodotClass};
 
 #[derive(GodotClass)]
 #[class(base=VBoxContainer)]
 pub struct LoginScreen {
+    // host_input: Option<Gd<LineEdit>>,
     username_input: Option<Gd<LineEdit>>,
     login_button: Option<Gd<Button>>,
     status_label: Option<Gd<Label>>,
@@ -18,6 +21,7 @@ pub struct LoginScreen {
 impl IVBoxContainer for LoginScreen {
     fn init(base: Base<VBoxContainer>) -> Self {
         Self {
+            // host_input: None,
             username_input: None,
             login_button: None,
             status_label: None,
@@ -50,10 +54,14 @@ impl IVBoxContainer for LoginScreen {
 #[godot_api]
 impl LoginScreen {
     fn setup_node_references(&mut self) {
+        // self.host_input = self.base().try_get_node_as::<LineEdit>("HostInput");
         self.username_input = self.base().try_get_node_as::<LineEdit>("UsernameInput");
         self.login_button = self.base().try_get_node_as::<Button>("LoginButton");
         self.status_label = self.base().try_get_node_as::<Label>("StatusLabel");
 
+        // if self.host_input.is_none() {
+        //     godot_error!("Could not find HostInput node");
+        // }
         if self.username_input.is_none() {
             godot_error!("Could not find UsernameInput node");
         }
@@ -74,20 +82,32 @@ impl LoginScreen {
 
     #[func]
     fn on_login_pressed(&mut self) {
+        // let Some(host_input) = &self.host_input else {
+        //     godot_error!("Expected host_input");
+        //     return;
+        // };
+
         let Some(username_input) = &self.username_input else {
             godot_error!("Expected username_input");
 
             return;
         };
 
+        // let host = host_input.get_text().to_string();
         let username = username_input.get_text().to_string();
+        // 
+        // if host.trim().is_empty() {
+        //     self.set_status("Please enter a host address");
+        //     return;
+        // }
 
         if username.trim().is_empty() {
             self.set_status("Please enter a username");
             return;
         }
 
-        self.set_status("Connecting to server...");
+        self.set_status("Initializing connection...");
+        initialize_connection("kik-pok");
 
         let mut connection = GLOBAL_CONNECTION.lock().unwrap();
         if !connection.is_connected() {
@@ -99,6 +119,8 @@ impl LoginScreen {
             self.set_status("A player with this username is already logged in");
             return;
         }
+        
+        godot_print!("Reconnecting...");
 
         match connection.connect(&username) {
             Ok(_) => {
@@ -106,6 +128,7 @@ impl LoginScreen {
             }
             Err(e) => {
                 self.set_status(&format!("Connection failed: {}", e));
+                return;
             }
         }
 
@@ -135,6 +158,10 @@ impl LoginScreen {
         if let Some(username_input) = &mut self.username_input {
             username_input.set_editable(state == ConnectionState::Disconnected);
         }
+
+        // if let Some(host_input) = &mut self.host_input {
+        //     host_input.set_editable(state == ConnectionState::Disconnected);
+        // }
     }
 
     fn transition_to_game(&mut self) {

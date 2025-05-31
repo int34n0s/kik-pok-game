@@ -7,8 +7,10 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
-godot = "0.2.4"
+godot = "0.3.0"
 
 spacetimedb-sdk = "1.1.1"
 
 lazy_static = "1.5.0"
+uuid = { version = "1.17.0", features = ["v4"] }
+rand = "0.9.1"

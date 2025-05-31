@@ -35,6 +35,13 @@ layout_mode = 2
 placeholder_text = "Enter your username"
 alignment = 1
 
+[node name="HostInput" type="LineEdit" parent="PanelContainer/LoginScreen"]
+visible = false
+layout_mode = 2
+text = "https://c2eb-185-143-147-144.ngrok-free.app"
+placeholder_text = "Enter host"
+alignment = 1
+
 [node name="LoginButton" type="Button" parent="PanelContainer/LoginScreen"]
 layout_mode = 2
 text = "Login"
