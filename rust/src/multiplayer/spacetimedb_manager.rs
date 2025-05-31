@@ -9,19 +9,25 @@ use crate::{
 use crate::{CoinTableAccess, DbVector2, PlayerTableAccess, WorldSceneTableAccess};
 
 use std::sync::atomic::Ordering;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 use godot::prelude::*;
-
+use rand::{RngCore, SeedableRng};
+use rand::rngs::StdRng;
 use spacetimedb_sdk::{DbContext, Error, Table, credentials};
+use uuid::Uuid;
 
-#[derive(Clone, Copy, PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug, Default)]
 pub enum ConnectionState {
+    #[default]
     Disconnected,
     Connecting,
     Connected,
     LoggedIn,
 }
 
+#[derive(Default)]
 pub struct SpacetimeDBManager {
     host: String,
     db_name: String,
@@ -39,7 +45,7 @@ impl SpacetimeDBManager {
             db_name
         );
 
-        let host = format!("http://{}", host);
+        let host = format!("{}", host);
         let db_name = db_name.to_string();
 
         let connection = match Self::connect_to_db(&host, &db_name) {
@@ -140,7 +146,15 @@ impl SpacetimeDBManager {
     }
 
     fn connect_to_db_with_creds(&self, username: &str) -> Result<DbConnection, String> {
-        let instance_id = username.to_string();
+        let mut hasher = DefaultHasher::new();
+        username.hash(&mut hasher);
+        let seed = hasher.finish();
+        
+        let mut rng = StdRng::seed_from_u64(seed);
+        let mut random_bytes = [0u8; 16];
+        rng.fill_bytes(&mut random_bytes);
+        
+        let instance_id = Uuid::from_bytes(random_bytes).to_string();
         let creds_file = credentials::File::new(&instance_id);
 
         DbConnection::builder()
@@ -289,12 +303,6 @@ impl SpacetimeDBManager {
 
     pub fn is_player_logged_in(&self, username: &str) -> bool {
         if let Some(connection) = &self.connection {
-            godot_print!(
-                "Username: {}, {:?}",
-                username,
-                connection.db().player().iter().collect::<Vec<_>>()
-            );
-
             connection
                 .db()
                 .player()
