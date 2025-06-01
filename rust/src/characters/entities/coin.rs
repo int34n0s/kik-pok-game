@@ -7,6 +7,7 @@ use godot::prelude::*;
 #[class(base=Area2D)]
 pub struct CoinArea {
     game_manager: Option<Gd<GameManager>>,
+    
     animation_player: Option<Gd<AnimationPlayer>>,
 
     #[base]
@@ -64,7 +65,7 @@ impl IArea2D for CoinArea {
 #[godot_api]
 impl CoinArea {
     #[func]
-    fn on_body_entered(&mut self, body: Gd<PlayerNode>) {
+    fn on_body_entered(&mut self, body: Gd<Node2D>) {
         let position = self.base().get_global_position();
 
         {
@@ -92,9 +93,9 @@ impl CoinArea {
         if !connection.is_connected() {
             return;
         }
-
-        let body_binding = body.bind();
-        if !body_binding.is_player_local() {
+        
+        let local_player = body.try_cast::<LocalPlayerNode>();
+        if !local_player.is_ok() {
             self.base_mut().queue_free();
 
             return;

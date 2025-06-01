@@ -4,14 +4,11 @@
 #![allow(unused, clippy::all)]
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-use super::direction_type::Direction;
-
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
 pub(super) struct RegisterPlayerArgs {
     pub name: String,
     pub scene_id: u32,
-    pub direction: Direction,
 }
 
 impl From<RegisterPlayerArgs> for super::Reducer {
@@ -19,7 +16,6 @@ impl From<RegisterPlayerArgs> for super::Reducer {
         Self::RegisterPlayer {
             name: args.name,
             scene_id: args.scene_id,
-            direction: args.direction,
         }
     }
 }
@@ -40,12 +36,7 @@ pub trait register_player {
     /// This method returns immediately, and errors only if we are unable to send the request.
     /// The reducer will run asynchronously in the future,
     ///  and its status can be observed by listening for [`Self::on_register_player`] callbacks.
-    fn register_player(
-        &self,
-        name: String,
-        scene_id: u32,
-        direction: Direction,
-    ) -> __sdk::Result<()>;
+    fn register_player(&self, name: String, scene_id: u32) -> __sdk::Result<()>;
     /// Register a callback to run whenever we are notified of an invocation of the reducer `register_player`.
     ///
     /// Callbacks should inspect the [`__sdk::ReducerEvent`] contained in the [`super::ReducerEventContext`]
@@ -55,7 +46,7 @@ pub trait register_player {
     /// to cancel the callback.
     fn on_register_player(
         &self,
-        callback: impl FnMut(&super::ReducerEventContext, &String, &u32, &Direction) + Send + 'static,
+        callback: impl FnMut(&super::ReducerEventContext, &String, &u32) + Send + 'static,
     ) -> RegisterPlayerCallbackId;
     /// Cancel a callback previously registered by [`Self::on_register_player`],
     /// causing it not to run in the future.
@@ -63,26 +54,13 @@ pub trait register_player {
 }
 
 impl register_player for super::RemoteReducers {
-    fn register_player(
-        &self,
-        name: String,
-        scene_id: u32,
-        direction: Direction,
-    ) -> __sdk::Result<()> {
-        self.imp.call_reducer(
-            "register_player",
-            RegisterPlayerArgs {
-                name,
-                scene_id,
-                direction,
-            },
-        )
+    fn register_player(&self, name: String, scene_id: u32) -> __sdk::Result<()> {
+        self.imp
+            .call_reducer("register_player", RegisterPlayerArgs { name, scene_id })
     }
     fn on_register_player(
         &self,
-        mut callback: impl FnMut(&super::ReducerEventContext, &String, &u32, &Direction)
-        + Send
-        + 'static,
+        mut callback: impl FnMut(&super::ReducerEventContext, &String, &u32) + Send + 'static,
     ) -> RegisterPlayerCallbackId {
         RegisterPlayerCallbackId(self.imp.on_reducer(
             "register_player",
@@ -90,12 +68,7 @@ impl register_player for super::RemoteReducers {
                 let super::ReducerEventContext {
                     event:
                         __sdk::ReducerEvent {
-                            reducer:
-                                super::Reducer::RegisterPlayer {
-                                    name,
-                                    scene_id,
-                                    direction,
-                                },
+                            reducer: super::Reducer::RegisterPlayer { name, scene_id },
                             ..
                         },
                     ..
@@ -103,7 +76,7 @@ impl register_player for super::RemoteReducers {
                 else {
                     unreachable!()
                 };
-                callback(ctx, name, scene_id, direction)
+                callback(ctx, name, scene_id)
             }),
         ))
     }

@@ -2,8 +2,8 @@
 // WILL NOT BE SAVED. MODIFY TABLES IN YOUR MODULE SOURCE CODE INSTEAD.
 
 #![allow(unused, clippy::all)]
-use super::player_type::Player;
-use super::positioning_type::Positioning;
+use super::db_player_type::DbPlayer;
+use super::db_vector_2_type::DbVector2;
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 /// Table handle for the table `logged_out_player`.
@@ -15,7 +15,7 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 /// but to directly chain method calls,
 /// like `ctx.db.logged_out_player().on_insert(...)`.
 pub struct LoggedOutPlayerTableHandle<'ctx> {
-    imp: __sdk::TableHandle<Player>,
+    imp: __sdk::TableHandle<DbPlayer>,
     ctx: std::marker::PhantomData<&'ctx super::RemoteTables>,
 }
 
@@ -32,7 +32,7 @@ pub trait LoggedOutPlayerTableAccess {
 impl LoggedOutPlayerTableAccess for super::RemoteTables {
     fn logged_out_player(&self) -> LoggedOutPlayerTableHandle<'_> {
         LoggedOutPlayerTableHandle {
-            imp: self.imp.get_table::<Player>("logged_out_player"),
+            imp: self.imp.get_table::<DbPlayer>("logged_out_player"),
             ctx: std::marker::PhantomData,
         }
     }
@@ -42,13 +42,13 @@ pub struct LoggedOutPlayerInsertCallbackId(__sdk::CallbackId);
 pub struct LoggedOutPlayerDeleteCallbackId(__sdk::CallbackId);
 
 impl<'ctx> __sdk::Table for LoggedOutPlayerTableHandle<'ctx> {
-    type Row = Player;
+    type Row = DbPlayer;
     type EventContext = super::EventContext;
 
     fn count(&self) -> u64 {
         self.imp.count()
     }
-    fn iter(&self) -> impl Iterator<Item = Player> + '_ {
+    fn iter(&self) -> impl Iterator<Item = DbPlayer> + '_ {
         self.imp.iter()
     }
 
@@ -81,7 +81,7 @@ impl<'ctx> __sdk::Table for LoggedOutPlayerTableHandle<'ctx> {
 
 #[doc(hidden)]
 pub(super) fn register_table(client_cache: &mut __sdk::ClientCache<super::RemoteModule>) {
-    let _table = client_cache.get_or_make_table::<Player>("logged_out_player");
+    let _table = client_cache.get_or_make_table::<DbPlayer>("logged_out_player");
     _table.add_unique_constraint::<__sdk::Identity>("identity", |row| &row.identity);
     _table.add_unique_constraint::<u32>("player_id", |row| &row.player_id);
 }
@@ -105,9 +105,9 @@ impl<'ctx> __sdk::TableWithPrimaryKey for LoggedOutPlayerTableHandle<'ctx> {
 #[doc(hidden)]
 pub(super) fn parse_table_update(
     raw_updates: __ws::TableUpdate<__ws::BsatnFormat>,
-) -> __sdk::Result<__sdk::TableUpdate<Player>> {
+) -> __sdk::Result<__sdk::TableUpdate<DbPlayer>> {
     __sdk::TableUpdate::parse_table_update(raw_updates).map_err(|e| {
-        __sdk::InternalError::failed_parse("TableUpdate<Player>", "TableUpdate")
+        __sdk::InternalError::failed_parse("TableUpdate<DbPlayer>", "TableUpdate")
             .with_cause(e)
             .into()
     })
@@ -121,7 +121,7 @@ pub(super) fn parse_table_update(
 /// but to directly chain method calls,
 /// like `ctx.db.logged_out_player().identity().find(...)`.
 pub struct LoggedOutPlayerIdentityUnique<'ctx> {
-    imp: __sdk::UniqueConstraintHandle<Player, __sdk::Identity>,
+    imp: __sdk::UniqueConstraintHandle<DbPlayer, __sdk::Identity>,
     phantom: std::marker::PhantomData<&'ctx super::RemoteTables>,
 }
 
@@ -140,7 +140,7 @@ impl<'ctx> LoggedOutPlayerTableHandle<'ctx> {
 impl<'ctx> LoggedOutPlayerIdentityUnique<'ctx> {
     /// Find the subscribed row whose `identity` column value is equal to `col_val`,
     /// if such a row is present in the client cache.
-    pub fn find(&self, col_val: &__sdk::Identity) -> Option<Player> {
+    pub fn find(&self, col_val: &__sdk::Identity) -> Option<DbPlayer> {
         self.imp.find(col_val)
     }
 }
@@ -153,7 +153,7 @@ impl<'ctx> LoggedOutPlayerIdentityUnique<'ctx> {
 /// but to directly chain method calls,
 /// like `ctx.db.logged_out_player().player_id().find(...)`.
 pub struct LoggedOutPlayerPlayerIdUnique<'ctx> {
-    imp: __sdk::UniqueConstraintHandle<Player, u32>,
+    imp: __sdk::UniqueConstraintHandle<DbPlayer, u32>,
     phantom: std::marker::PhantomData<&'ctx super::RemoteTables>,
 }
 
@@ -170,7 +170,7 @@ impl<'ctx> LoggedOutPlayerTableHandle<'ctx> {
 impl<'ctx> LoggedOutPlayerPlayerIdUnique<'ctx> {
     /// Find the subscribed row whose `player_id` column value is equal to `col_val`,
     /// if such a row is present in the client cache.
-    pub fn find(&self, col_val: &u32) -> Option<Player> {
+    pub fn find(&self, col_val: &u32) -> Option<DbPlayer> {
         self.imp.find(col_val)
     }
 }

@@ -2,51 +2,20 @@ use godot::builtin::Vector2;
 
 use crate::*;
 
-impl PlayerState {
-    /// Convert PlayerState to Positioning for SpacetimeDB
-    pub fn to_positioning(&self) -> Positioning {
-        let direction = if self.direction > 0.0 {
-            Direction::Right
-        } else if self.direction < 0.0 {
-            Direction::Left
-        } else {
-            Direction::None
-        };
-
-        Positioning {
-            coordinates: DbVector2 {
-                x: self.position.x,
-                y: self.position.y,
-            },
-            direction,
-            in_on_floor: self.is_on_floor,
-        }
-    }
-
-    /// Create PlayerState from Positioning
-    pub fn from_positioning(positioning: &Positioning) -> Self {
-        let direction = match positioning.direction {
-            Direction::Left => -1.0,
-            Direction::Right => 1.0,
-            Direction::None => 0.0,
-        };
-
+impl From<Vector2> for DbVector2 {
+    fn from(value: Vector2) -> Self {
         Self {
-            position: Vector2::new(positioning.coordinates.x, positioning.coordinates.y),
-            direction,
-            is_on_floor: positioning.in_on_floor,
+            x: value.x,
+            y: value.y,
         }
     }
 }
 
-impl Positioning {
-    /// Convert Positioning to PlayerState
-    pub fn to_player_state(&self) -> PlayerState {
-        PlayerState::from_positioning(self)
-    }
-
-    /// Create Positioning from PlayerState
-    pub fn from_player_state(state: &PlayerState) -> Self {
-        state.to_positioning()
+impl From<DbVector2> for Vector2 {
+    fn from(value: DbVector2) -> Self {
+        Self {
+            x: value.x,
+            y: value.y,
+        }
     }
 }
