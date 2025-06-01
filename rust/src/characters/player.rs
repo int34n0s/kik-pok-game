@@ -1,59 +1,33 @@
 use godot::prelude::*;
 
+use crate::{GLOBAL_CONNECTION, handle_player_animation};
 use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, Input};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
-pub struct PlayerNode {
+pub struct LocalPlayerNode {
     speed: f32,
     jump_velocity: f32,
 
-    is_local_player: bool,
     animated_sprite: Option<Gd<AnimatedSprite2D>>,
 
     #[base]
     base: Base<CharacterBody2D>,
 }
 
-#[derive(GodotClass)]
-#[class(init)]
-pub struct PlayerState {
-    #[export]
-    pub position: Vector2,
-    #[export]
-    pub direction: f32,
-    #[export]
-    pub is_on_floor: bool,
-}
-
 #[godot_api]
-impl PlayerState {
-    #[func]
-    pub fn new(position: Vector2, direction: f32, is_on_floor: bool) -> Gd<Self> {
-        Gd::from_object(Self {
-            position,
-            direction,
-            is_on_floor,
-        })
-    }
-}
-
-#[godot_api]
-impl ICharacterBody2D for PlayerNode {
+impl ICharacterBody2D for LocalPlayerNode {
     fn init(base: Base<CharacterBody2D>) -> Self {
         Self {
             speed: 200.0,
             jump_velocity: -300.0,
-            is_local_player: false,
             animated_sprite: None,
             base,
         }
     }
 
     fn physics_process(&mut self, delta: f64) {
-        if self.is_local_player {
-            self.handle_local_input(delta);
-        }
+        self.handle_local_input(delta);
     }
 
     fn ready(&mut self) {
@@ -62,54 +36,19 @@ impl ICharacterBody2D for PlayerNode {
             .try_get_node_as::<AnimatedSprite2D>("AnimatedSprite2D")
         {
             self.animated_sprite = Some(animated_sprite);
+
             return;
         }
 
-        if self.animated_sprite.is_none() {
-            godot_print!("Failed to find animated sprite");
-        }
+        godot_print!("Failed to find animated sprite");
     }
 }
 
 #[godot_api]
-impl PlayerNode {
+impl LocalPlayerNode {
     #[func]
-    pub fn set_as_local_player(&mut self) {
-        self.is_local_player = true;
-    }
-
-    #[func]
-    pub fn set_as_remote_player(&mut self) {
-        self.is_local_player = false;
-    }
-
-    #[func]
-    pub fn is_player_local(&self) -> bool {
-        self.is_local_player
-    }
-
-    #[func]
-    pub fn set_player_state(&mut self, state: Gd<PlayerState>) {
-        let state = state.bind();
-
-        let position = state.position;
-        let direction = state.direction;
-        let is_on_floor = state.is_on_floor;
-
-        self.base_mut().set_global_position(position);
-
-        if let Some(animated_sprite) = &mut self.animated_sprite {
-            Self::handle_animated_sprite(animated_sprite, direction, is_on_floor);
-        }
-    }
-
-    #[func]
-    pub fn get_player_state(&self) -> Gd<PlayerState> {
-        let position = self.base().get_global_position();
-        let direction = Input::singleton().get_axis("move_left", "move_right");
-        let is_on_floor = self.base().is_on_floor();
-
-        PlayerState::new(position, direction, is_on_floor)
+    pub fn get_player_position(&self) -> Vector2 {
+        self.base().get_global_position()
     }
 
     fn handle_local_input(&mut self, delta: f64) {
@@ -133,7 +72,7 @@ impl PlayerNode {
 
         // Handle sprite flipping and animations
         if let Some(animated_sprite) = &mut self.animated_sprite {
-            Self::handle_animated_sprite(animated_sprite, direction, is_on_floor);
+            handle_player_animation(animated_sprite, direction, is_on_floor);
         }
 
         // Apply movement
@@ -147,29 +86,18 @@ impl PlayerNode {
         // Update velocity and move
         self.base_mut().set_velocity(velocity);
         self.base_mut().move_and_slide();
-    }
 
-    fn handle_animated_sprite(
-        animated_sprite: &mut AnimatedSprite2D,
-        direction: f32,
-        is_on_floor: bool,
-    ) {
-        // Flip the sprite
-        if direction > 0.0 {
-            animated_sprite.set_flip_h(false);
-        } else if direction < 0.0 {
-            animated_sprite.set_flip_h(true);
-        }
-
-        // Play animations
-        if is_on_floor {
-            if direction == 0.0 {
-                animated_sprite.call("play", &["idle".to_variant()]);
-            } else {
-                animated_sprite.call("play", &["run".to_variant()]);
+        if direction != 0.0 || !is_on_floor {
+            let connection = GLOBAL_CONNECTION.lock().unwrap();
+            if !connection.is_connected() {
+                return;
             }
-        } else {
-            animated_sprite.call("play", &["jump".to_variant()]);
+
+            let current_position = self.base().get_global_position();
+            match connection.update_position(current_position.into()) {
+                Ok(_) => {}
+                Err(e) => godot_print!("Failed to send position: {}", e),
+            }
         }
     }
 }

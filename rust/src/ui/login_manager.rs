@@ -1,4 +1,4 @@
-use crate::{ConnectionState, Direction, GLOBAL_CONNECTION, initialize_connection};
+use crate::{ConnectionState, GLOBAL_CONNECTION, initialize_connection};
 
 use godot::classes::{Button, IVBoxContainer, Label, LineEdit, VBoxContainer};
 use godot::prelude::*;
@@ -130,7 +130,7 @@ impl LoginScreen {
             }
         }
 
-        match connection.register_player(username, 1, Direction::Right) {
+        match connection.register_player(username, 1) {
             Ok(_) => {
                 self.set_status("Registration request sent...");
             }

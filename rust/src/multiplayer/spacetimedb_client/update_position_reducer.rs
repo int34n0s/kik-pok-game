@@ -4,12 +4,12 @@
 #![allow(unused, clippy::all)]
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-use super::positioning_type::Positioning;
+use super::db_vector_2_type::DbVector2;
 
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
 pub(super) struct UpdatePositionArgs {
-    pub positioning: Positioning,
+    pub positioning: DbVector2,
 }
 
 impl From<UpdatePositionArgs> for super::Reducer {
@@ -36,7 +36,7 @@ pub trait update_position {
     /// This method returns immediately, and errors only if we are unable to send the request.
     /// The reducer will run asynchronously in the future,
     ///  and its status can be observed by listening for [`Self::on_update_position`] callbacks.
-    fn update_position(&self, positioning: Positioning) -> __sdk::Result<()>;
+    fn update_position(&self, positioning: DbVector2) -> __sdk::Result<()>;
     /// Register a callback to run whenever we are notified of an invocation of the reducer `update_position`.
     ///
     /// Callbacks should inspect the [`__sdk::ReducerEvent`] contained in the [`super::ReducerEventContext`]
@@ -46,7 +46,7 @@ pub trait update_position {
     /// to cancel the callback.
     fn on_update_position(
         &self,
-        callback: impl FnMut(&super::ReducerEventContext, &Positioning) + Send + 'static,
+        callback: impl FnMut(&super::ReducerEventContext, &DbVector2) + Send + 'static,
     ) -> UpdatePositionCallbackId;
     /// Cancel a callback previously registered by [`Self::on_update_position`],
     /// causing it not to run in the future.
@@ -54,13 +54,13 @@ pub trait update_position {
 }
 
 impl update_position for super::RemoteReducers {
-    fn update_position(&self, positioning: Positioning) -> __sdk::Result<()> {
+    fn update_position(&self, positioning: DbVector2) -> __sdk::Result<()> {
         self.imp
             .call_reducer("update_position", UpdatePositionArgs { positioning })
     }
     fn on_update_position(
         &self,
-        mut callback: impl FnMut(&super::ReducerEventContext, &Positioning) + Send + 'static,
+        mut callback: impl FnMut(&super::ReducerEventContext, &DbVector2) + Send + 'static,
     ) -> UpdatePositionCallbackId {
         UpdatePositionCallbackId(self.imp.on_reducer(
             "update_position",

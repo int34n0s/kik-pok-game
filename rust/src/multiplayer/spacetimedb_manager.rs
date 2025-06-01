@@ -2,10 +2,7 @@ use crate::multiplayer::spacetimedb_client;
 use crate::register_player_reducer::register_player;
 use crate::update_position_reducer::update_position;
 
-use crate::{
-    CONNECTION_STATE, DbConnection, Direction, ErrorContext, PlayerScoreTableAccess, Positioning,
-    collect_coin, register_coin,
-};
+use crate::{CONNECTION_STATE, DbConnection, ErrorContext, PlayerScoreTableAccess, collect_coin, register_coin, DbPlayer};
 use crate::{CoinTableAccess, DbVector2, PlayerTableAccess, WorldSceneTableAccess};
 
 use std::collections::hash_map::DefaultHasher;
@@ -96,7 +93,7 @@ impl SpacetimeDBManager {
 
                 connection
                     .reducers
-                    .on_register_player(|ctx, _name, _scene_id, _direction| {
+                    .on_register_player(|ctx, _name, _scene_id| {
                         match &ctx.event.status {
                             spacetimedb_sdk::Status::Committed => {
                                 godot_print!("Player registration committed successfully");
@@ -111,6 +108,7 @@ impl SpacetimeDBManager {
                         }
                     });
 
+                // TODO: probably will move to the on_applied at some point
                 connection
                     .subscription_builder()
                     .subscribe("SELECT * FROM player");
@@ -145,6 +143,10 @@ impl SpacetimeDBManager {
         }
     }
 
+    pub fn get_connection_mut(&mut self) -> Option<&mut DbConnection> {
+        self.connection.as_mut()
+    }
+
     fn connect_to_db_with_creds(&self, username: &str) -> Result<DbConnection, String> {
         let mut hasher = DefaultHasher::new();
         username.hash(&mut hasher);
@@ -174,9 +176,13 @@ impl SpacetimeDBManager {
     }
 
     fn connect_to_db(host: &str, name: &str) -> Result<DbConnection, String> {
+        let instance_id = Uuid::new_v4().to_string();
+        let creds_file = credentials::File::new(&instance_id);
+
         DbConnection::builder()
             .on_connect_error(Self::on_connect_error)
             .on_disconnect(Self::on_disconnected)
+            .with_token(creds_file.load().unwrap_or_default())
             .with_module_name(name)
             .with_uri(host)
             .build()
@@ -215,13 +221,12 @@ impl SpacetimeDBManager {
         &mut self,
         username: String,
         scene_id: u32,
-        direction: Direction,
     ) -> Result<(), String> {
         let connection = self.connection.as_ref().ok_or("No connection available")?;
 
         match connection
             .reducers
-            .register_player(username, scene_id, direction)
+            .register_player(username, scene_id)
         {
             Ok(_) => {
                 godot_print!("Player registration request sent successfully!");
@@ -238,13 +243,12 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn update_position(&self, positioning: Positioning) -> Result<(), String> {
+    pub fn update_position(&self, positioning: DbVector2) -> Result<(), String> {
         if self.state != ConnectionState::LoggedIn {
             return Err("Not logged in".to_string());
         }
 
         let connection = self.connection.as_ref().ok_or("No connection available")?;
-
         match connection.reducers.update_position(positioning) {
             Ok(_) => Ok(()),
             Err(e) => {
@@ -255,7 +259,7 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn get_other_players(&self) -> Vec<spacetimedb_client::player_type::Player> {
+    pub fn get_other_players(&self) -> Vec<DbPlayer> {
         if let Some(connection) = &self.connection {
             connection
                 .db()

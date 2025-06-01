@@ -5,16 +5,16 @@
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 use super::db_vector_2_type::DbVector2;
-use super::direction_type::Direction;
 
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
-pub struct Positioning {
-    pub coordinates: DbVector2,
-    pub direction: Direction,
-    pub in_on_floor: bool,
+pub struct DbPlayer {
+    pub identity: __sdk::Identity,
+    pub player_id: u32,
+    pub name: String,
+    pub positioning: DbVector2,
 }
 
-impl __sdk::InModule for Positioning {
+impl __sdk::InModule for DbPlayer {
     type Module = super::RemoteModule;
 }

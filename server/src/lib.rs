@@ -22,12 +22,18 @@ pub fn identity_connected(ctx: &ReducerContext) -> Result<(), String> {
         "The identity_connected reducer was called by {}.",
         ctx.sender
     );
-    
+
     if ctx.db.player().iter().any(|p| p.identity == ctx.sender) {
         return Err("Player already in the game".to_string());
     }
 
-    if ctx.db.logged_out_player().identity().find(ctx.sender).is_some() {
+    if ctx
+        .db
+        .logged_out_player()
+        .identity()
+        .find(ctx.sender)
+        .is_some()
+    {
         ctx.db.logged_out_player().identity().delete(ctx.sender);
     }
 
@@ -88,12 +94,7 @@ pub fn register_scene(
 }
 
 #[spacetimedb::reducer]
-pub fn register_player(
-    ctx: &ReducerContext,
-    name: String,
-    scene_id: u32,
-    direction: Direction,
-) -> Result<(), String> {
+pub fn register_player(ctx: &ReducerContext, name: String, scene_id: u32) -> Result<(), String> {
     log::trace!(
         "Player {} is registering with name: {} in scene: {}",
         ctx.sender,
@@ -120,17 +121,11 @@ pub fn register_player(
         return Err("Name too long (max 20 characters)".to_string());
     }
 
-    let positioning = Positioning {
-        coordinates: scene.spawn_point,
-        direction,
-        in_on_floor: true,
-    };
-
-    match ctx.db.player().try_insert(Player {
+    match ctx.db.player().try_insert(DbPlayer {
         player_id: 0,
         identity: ctx.sender,
         name: name.trim().to_string(),
-        positioning,
+        positioning: scene.spawn_point,
     }) {
         Ok(player) => {
             log::info!(
@@ -150,7 +145,7 @@ pub fn register_player(
 }
 
 #[spacetimedb::reducer]
-pub fn update_position(ctx: &ReducerContext, positioning: Positioning) -> Result<(), String> {
+pub fn update_position(ctx: &ReducerContext, positioning: DbVector2) -> Result<(), String> {
     let mut player = ctx
         .db
         .player()
@@ -162,28 +157,44 @@ pub fn update_position(ctx: &ReducerContext, positioning: Positioning) -> Result
 
     let _player = ctx.db.player().identity().update(player);
 
-    // log::trace!(
-    //     "Updated position for player {} to coordinates: ({}, {}), direction: {:?}, on_floor: {}",
-    //     ctx.sender,
-    //     _player.positioning.coordinates.x,
-    //     _player.positioning.coordinates.y,
-    //     _player.positioning.direction,
-    //     _player.positioning.in_on_floor
-    // );
+    log::trace!(
+        "Updated position for player {} to coordinates: ({}, {})",
+        ctx.sender,
+        _player.positioning.x,
+        _player.positioning.y,
+    );
 
     Ok(())
 }
 
 #[spacetimedb::reducer]
-pub fn register_coin(ctx: &ReducerContext, position: DbVector2, scene_id: u32) -> Result<(), String> {
-    log::trace!("Registering coin at position ({}, {}) in scene {}", position.x, position.y, scene_id);
-    
+pub fn register_coin(
+    ctx: &ReducerContext,
+    position: DbVector2,
+    scene_id: u32,
+) -> Result<(), String> {
+    log::trace!(
+        "Registering coin at position ({}, {}) in scene {}",
+        position.x,
+        position.y,
+        scene_id
+    );
+
     // Check if coin already exists at this position
-    if ctx.db.coin().iter().any(|coin| coin.position.x == position.x && coin.position.y == position.y) {
-        log::warn!("Coin already exists at position ({}, {})", position.x, position.y);
+    if ctx
+        .db
+        .coin()
+        .iter()
+        .any(|coin| coin.position.x == position.x && coin.position.y == position.y)
+    {
+        log::warn!(
+            "Coin already exists at position ({}, {})",
+            position.x,
+            position.y
+        );
         return Ok(()); // Don't error, just ignore duplicate registration
     }
-    
+
     // Verify scene exists
     let _scene = ctx
         .db
@@ -191,7 +202,7 @@ pub fn register_coin(ctx: &ReducerContext, position: DbVector2, scene_id: u32) -
         .scene_id()
         .find(scene_id)
         .ok_or("Scene does not exist")?;
-    
+
     let coin = Coin {
         coin_id: 0, // Auto-incremented
         position,
@@ -199,11 +210,15 @@ pub fn register_coin(ctx: &ReducerContext, position: DbVector2, scene_id: u32) -
         is_collected: false,
         collected_by: None,
     };
-    
+
     match ctx.db.coin().try_insert(coin) {
         Ok(inserted_coin) => {
-            log::info!("Coin registered at position ({}, {}) with id: {}", 
-                      inserted_coin.position.x, inserted_coin.position.y, inserted_coin.coin_id);
+            log::info!(
+                "Coin registered at position ({}, {}) with id: {}",
+                inserted_coin.position.x,
+                inserted_coin.position.y,
+                inserted_coin.coin_id
+            );
             Ok(())
         }
         Err(e) => {
@@ -215,8 +230,13 @@ pub fn register_coin(ctx: &ReducerContext, position: DbVector2, scene_id: u32) -
 
 #[spacetimedb::reducer]
 pub fn collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), String> {
-    log::trace!("Player {} is collecting a coin at position ({}, {})", ctx.sender, position.x, position.y);
-    
+    log::trace!(
+        "Player {} is collecting a coin at position ({}, {})",
+        ctx.sender,
+        position.x,
+        position.y
+    );
+
     // Verify the player is registered
     let player = ctx
         .db
@@ -224,7 +244,7 @@ pub fn collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), Str
         .identity()
         .find(ctx.sender)
         .ok_or("Player not registered")?;
-    
+
     // Find the coin at this position
     let mut coin = ctx
         .db
@@ -232,23 +252,23 @@ pub fn collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), Str
         .iter()
         .find(|coin| coin.position.x == position.x && coin.position.y == position.y)
         .ok_or("Coin not found at this position")?;
-    
+
     // Check if coin is already collected
     if coin.is_collected {
         return Err("Coin already collected".to_string());
     }
-    
+
     // Mark coin as collected
     coin.is_collected = true;
     coin.collected_by = Some(ctx.sender);
     let updated_coin = ctx.db.coin().coin_id().update(coin);
-    
+
     // Update player score
     if let Some(mut score) = ctx.db.player_score().player_identity().find(ctx.sender) {
         // Update existing score
         score.add_coin();
         let updated_score = ctx.db.player_score().player_identity().update(score);
-        
+
         log::info!(
             "Player {} ({}) collected coin at ({}, {})! New total: {} coins",
             updated_score.player_name,
@@ -260,12 +280,12 @@ pub fn collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), Str
     } else {
         // Create new score record
         let scene_id = updated_coin.scene_id;
-        
+
         let mut new_score = PlayerScore::new(ctx.sender, player.name.clone(), scene_id);
         new_score.add_coin();
-        
+
         let inserted_score = ctx.db.player_score().insert(new_score);
-        
+
         log::info!(
             "Player {} ({}) collected their first coin at ({}, {})! Score: {} coins",
             inserted_score.player_name,
@@ -275,6 +295,6 @@ pub fn collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), Str
             inserted_score.coins_collected
         );
     }
-    
+
     Ok(())
 }

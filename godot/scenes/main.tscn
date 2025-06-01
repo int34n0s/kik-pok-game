@@ -1,6 +1,6 @@
 [gd_scene load_steps=27 format=3 uid="uid://djbd7unb37usl"]
 
-[ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/characters/player.tscn" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/characters/local_player.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://23ginfucreyv" path="res://scenes/utils/game_manager.tscn" id="1_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://djk3o7lb4is77" path="res://scenes/environment/world.tscn" id="1_sugp2"]
 [ext_resource type="PackedScene" uid="uid://dvnr05iprl34b" path="res://scenes/entities/coin.tscn" id="4_jyhfs"]

@@ -7,16 +7,14 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 pub mod coin_table;
 pub mod coin_type;
 pub mod collect_coin_reducer;
+pub mod db_player_type;
 pub mod db_vector_2_type;
-pub mod direction_type;
 pub mod identity_connected_reducer;
 pub mod identity_disconnected_reducer;
 pub mod logged_out_player_table;
 pub mod player_score_table;
 pub mod player_score_type;
 pub mod player_table;
-pub mod player_type;
-pub mod positioning_type;
 pub mod register_coin_reducer;
 pub mod register_player_reducer;
 pub mod register_scene_reducer;
@@ -26,32 +24,30 @@ pub mod world_scene_type;
 
 pub use coin_table::*;
 pub use coin_type::Coin;
-pub use collect_coin_reducer::{CollectCoinCallbackId, collect_coin, set_flags_for_collect_coin};
+pub use collect_coin_reducer::{collect_coin, set_flags_for_collect_coin, CollectCoinCallbackId};
+pub use db_player_type::DbPlayer;
 pub use db_vector_2_type::DbVector2;
-pub use direction_type::Direction;
 pub use identity_connected_reducer::{
-    IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected,
+    identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId,
 };
 pub use identity_disconnected_reducer::{
-    IdentityDisconnectedCallbackId, identity_disconnected, set_flags_for_identity_disconnected,
+    identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
 };
 pub use logged_out_player_table::*;
 pub use player_score_table::*;
 pub use player_score_type::PlayerScore;
 pub use player_table::*;
-pub use player_type::Player;
-pub use positioning_type::Positioning;
 pub use register_coin_reducer::{
-    RegisterCoinCallbackId, register_coin, set_flags_for_register_coin,
+    register_coin, set_flags_for_register_coin, RegisterCoinCallbackId,
 };
 pub use register_player_reducer::{
-    RegisterPlayerCallbackId, register_player, set_flags_for_register_player,
+    register_player, set_flags_for_register_player, RegisterPlayerCallbackId,
 };
 pub use register_scene_reducer::{
-    RegisterSceneCallbackId, register_scene, set_flags_for_register_scene,
+    register_scene, set_flags_for_register_scene, RegisterSceneCallbackId,
 };
 pub use update_position_reducer::{
-    UpdatePositionCallbackId, set_flags_for_update_position, update_position,
+    set_flags_for_update_position, update_position, UpdatePositionCallbackId,
 };
 pub use world_scene_table::*;
 pub use world_scene_type::WorldScene;
@@ -76,14 +72,13 @@ pub enum Reducer {
     RegisterPlayer {
         name: String,
         scene_id: u32,
-        direction: Direction,
     },
     RegisterScene {
         scene_name: String,
         spawn_point: DbVector2,
     },
     UpdatePosition {
-        positioning: Positioning,
+        positioning: DbVector2,
     },
 }
 
@@ -154,8 +149,8 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
 #[doc(hidden)]
 pub struct DbUpdate {
     coin: __sdk::TableUpdate<Coin>,
-    logged_out_player: __sdk::TableUpdate<Player>,
-    player: __sdk::TableUpdate<Player>,
+    logged_out_player: __sdk::TableUpdate<DbPlayer>,
+    player: __sdk::TableUpdate<DbPlayer>,
     player_score: __sdk::TableUpdate<PlayerScore>,
     world_scene: __sdk::TableUpdate<WorldScene>,
 }
@@ -208,10 +203,10 @@ impl __sdk::DbUpdate for DbUpdate {
             .apply_diff_to_table::<Coin>("coin", &self.coin)
             .with_updates_by_pk(|row| &row.coin_id);
         diff.logged_out_player = cache
-            .apply_diff_to_table::<Player>("logged_out_player", &self.logged_out_player)
+            .apply_diff_to_table::<DbPlayer>("logged_out_player", &self.logged_out_player)
             .with_updates_by_pk(|row| &row.identity);
         diff.player = cache
-            .apply_diff_to_table::<Player>("player", &self.player)
+            .apply_diff_to_table::<DbPlayer>("player", &self.player)
             .with_updates_by_pk(|row| &row.identity);
         diff.player_score = cache
             .apply_diff_to_table::<PlayerScore>("player_score", &self.player_score)
@@ -229,8 +224,8 @@ impl __sdk::DbUpdate for DbUpdate {
 #[doc(hidden)]
 pub struct AppliedDiff<'r> {
     coin: __sdk::TableAppliedDiff<'r, Coin>,
-    logged_out_player: __sdk::TableAppliedDiff<'r, Player>,
-    player: __sdk::TableAppliedDiff<'r, Player>,
+    logged_out_player: __sdk::TableAppliedDiff<'r, DbPlayer>,
+    player: __sdk::TableAppliedDiff<'r, DbPlayer>,
     player_score: __sdk::TableAppliedDiff<'r, PlayerScore>,
     world_scene: __sdk::TableAppliedDiff<'r, WorldScene>,
 }
@@ -246,12 +241,12 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         callbacks: &mut __sdk::DbCallbacks<RemoteModule>,
     ) {
         callbacks.invoke_table_row_callbacks::<Coin>("coin", &self.coin, event);
-        callbacks.invoke_table_row_callbacks::<Player>(
+        callbacks.invoke_table_row_callbacks::<DbPlayer>(
             "logged_out_player",
             &self.logged_out_player,
             event,
         );
-        callbacks.invoke_table_row_callbacks::<Player>("player", &self.player, event);
+        callbacks.invoke_table_row_callbacks::<DbPlayer>("player", &self.player, event);
         callbacks.invoke_table_row_callbacks::<PlayerScore>(
             "player_score",
             &self.player_score,
@@ -500,21 +495,21 @@ impl __sdk::SubscriptionHandle for SubscriptionHandle {
 /// either a [`DbConnection`] or an [`EventContext`] and operate on either.
 pub trait RemoteDbContext:
     __sdk::DbContext<
-        DbView = RemoteTables,
-        Reducers = RemoteReducers,
-        SetReducerFlags = SetReducerFlags,
-        SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
-    >
+    DbView = RemoteTables,
+    Reducers = RemoteReducers,
+    SetReducerFlags = SetReducerFlags,
+    SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
+>
 {
 }
 impl<
-    Ctx: __sdk::DbContext<
+        Ctx: __sdk::DbContext<
             DbView = RemoteTables,
             Reducers = RemoteReducers,
             SetReducerFlags = SetReducerFlags,
             SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
         >,
-> RemoteDbContext for Ctx
+    > RemoteDbContext for Ctx
 {
 }
 
