@@ -23,7 +23,7 @@ lazy_static! {
 
 pub fn initialize_connection(db_name: &str) {
     let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-    *connection = SpacetimeDBManager::new("https://maincloud.spacetimedb.com", db_name);
+    *connection = SpacetimeDBManager::new("http://127.0.0.1:3000", db_name);
 }
 
 struct KikPokEngine;
