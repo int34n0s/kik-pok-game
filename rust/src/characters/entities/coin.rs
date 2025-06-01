@@ -1,7 +1,5 @@
-use crate::GLOBAL_CONNECTION;
-use crate::characters::utils::game_manager::GameManager;
+use crate::*;
 
-use crate::player::Player;
 use godot::classes::{AnimationPlayer, Area2D, IArea2D};
 use godot::prelude::*;
 
@@ -66,7 +64,7 @@ impl IArea2D for CoinArea {
 #[godot_api]
 impl CoinArea {
     #[func]
-    fn on_body_entered(&mut self, body: Gd<Player>) {
+    fn on_body_entered(&mut self, body: Gd<PlayerNode>) {
         let position = self.base().get_global_position();
 
         {

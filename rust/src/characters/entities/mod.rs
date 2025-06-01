@@ -1,1 +1,3 @@
-pub(crate) mod coin;
+mod coin;
+
+pub use coin::*;

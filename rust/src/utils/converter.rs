@@ -1,7 +1,6 @@
 use godot::builtin::Vector2;
 
-use crate::player::PlayerState;
-use crate::multiplayer::spacetimedb_client::{Positioning, Direction, DbVector2};
+use crate::*;
 
 impl PlayerState {
     /// Convert PlayerState to Positioning for SpacetimeDB
