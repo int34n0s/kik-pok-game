@@ -171,7 +171,7 @@ animations = [{
 [sub_resource type="CircleShape2D" id="CircleShape2D_fjrip"]
 radius = 5.0
 
-[node name="Player" type="Player"]
+[node name="Player" type="PlayerNode"]
 z_index = 2
 collision_layer = 2
 

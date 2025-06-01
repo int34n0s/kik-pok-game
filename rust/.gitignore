@@ -3,7 +3,7 @@
 **/*.rs.bk
 *.pdb
 
-src/multiplayer/spacetimedb_client/*.rs
+result
 
 # Cargo
 Cargo.lock
