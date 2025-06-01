@@ -23,6 +23,7 @@ lazy_static! {
 
 pub fn initialize_connection(db_name: &str) {
     let mut connection = GLOBAL_CONNECTION.lock().unwrap();
+    // https://maincloud.spacetimedb.com
     *connection = SpacetimeDBManager::new("http://localhost:3000", db_name);
 }
 

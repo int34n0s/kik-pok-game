@@ -1,7 +1,8 @@
+use crate::handle_player_animation;
+
 use godot::prelude::*;
 
-use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, PhysicsRayQueryParameters2D, PhysicsShapeQueryParameters2D};
-use crate::handle_player_animation;
+use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D};
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
