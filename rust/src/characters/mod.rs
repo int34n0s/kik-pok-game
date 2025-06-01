@@ -1,3 +1,7 @@
 mod entities;
-pub mod player;
+mod player;
 mod utils;
+
+pub use entities::*;
+pub use player::*;
+pub use utils::*;

@@ -1,5 +1,4 @@
-use crate::player::Player;
-use crate::{GLOBAL_CONNECTION, player_type};
+use crate::*;
 
 use godot::classes::{INode, Label, Node, PackedScene, ResourceLoader};
 use godot::prelude::*;
@@ -15,8 +14,8 @@ pub struct MultiplayerManager {
     position_update_interval: f32,
 
     // Player management
-    local_player: Option<Gd<Player>>,
-    remote_players: HashMap<Identity, Gd<Player>>, // player_id -> Player instance
+    local_player: Option<Gd<PlayerNode>>,
+    remote_players: HashMap<Identity, Gd<PlayerNode>>, // player_id -> Player instance
 
     #[base]
     base: Base<Node>,
@@ -43,7 +42,7 @@ impl INode for MultiplayerManager {
     fn ready(&mut self) {
         godot_print!("MultiplayerManager starting connection...");
 
-        let Some(mut player) = self.base().try_get_node_as::<Player>("Player") else {
+        let Some(mut player) = self.base().try_get_node_as::<PlayerNode>("Player") else {
             godot_print!("Failed to find player!");
             return;
         };
@@ -167,7 +166,7 @@ impl MultiplayerManager {
             return;
         };
 
-        let Ok(mut remote_player) = instance.try_cast::<Player>() else {
+        let Ok(mut remote_player) = instance.try_cast::<PlayerNode>() else {
             godot_print!("Failed to cast instance to Player");
             return;
         };

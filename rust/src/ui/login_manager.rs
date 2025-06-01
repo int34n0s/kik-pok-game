@@ -1,9 +1,7 @@
 use crate::{ConnectionState, Direction, GLOBAL_CONNECTION, initialize_connection};
 
 use godot::classes::{Button, IVBoxContainer, Label, LineEdit, VBoxContainer};
-use godot::global::{godot_error, godot_print};
-use godot::obj::{Base, Gd, WithBaseField};
-use godot::register::{godot_api, GodotClass};
+use godot::prelude::*;
 
 #[derive(GodotClass)]
 #[class(base=VBoxContainer)]
@@ -95,7 +93,7 @@ impl LoginScreen {
 
         // let host = host_input.get_text().to_string();
         let username = username_input.get_text().to_string();
-        // 
+        //
         // if host.trim().is_empty() {
         //     self.set_status("Please enter a host address");
         //     return;
@@ -119,7 +117,7 @@ impl LoginScreen {
             self.set_status("A player with this username is already logged in");
             return;
         }
-        
+
         godot_print!("Reconnecting...");
 
         match connection.connect(&username) {

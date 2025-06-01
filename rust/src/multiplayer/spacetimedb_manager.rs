@@ -8,13 +8,13 @@ use crate::{
 };
 use crate::{CoinTableAccess, DbVector2, PlayerTableAccess, WorldSceneTableAccess};
 
-use std::sync::atomic::Ordering;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
+use std::sync::atomic::Ordering;
 
 use godot::prelude::*;
-use rand::{RngCore, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{RngCore, SeedableRng};
 use spacetimedb_sdk::{DbContext, Error, Table, credentials};
 use uuid::Uuid;
 
@@ -45,7 +45,7 @@ impl SpacetimeDBManager {
             db_name
         );
 
-        let host = format!("{}", host);
+        let host = host.to_string();
         let db_name = db_name.to_string();
 
         let connection = match Self::connect_to_db(&host, &db_name) {
@@ -149,11 +149,11 @@ impl SpacetimeDBManager {
         let mut hasher = DefaultHasher::new();
         username.hash(&mut hasher);
         let seed = hasher.finish();
-        
+
         let mut rng = StdRng::seed_from_u64(seed);
         let mut random_bytes = [0u8; 16];
         rng.fill_bytes(&mut random_bytes);
-        
+
         let instance_id = Uuid::from_bytes(random_bytes).to_string();
         let creds_file = credentials::File::new(&instance_id);
 

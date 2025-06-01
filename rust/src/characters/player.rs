@@ -4,7 +4,7 @@ use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, Input}
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
-pub struct Player {
+pub struct PlayerNode {
     speed: f32,
     jump_velocity: f32,
 
@@ -39,7 +39,7 @@ impl PlayerState {
 }
 
 #[godot_api]
-impl ICharacterBody2D for Player {
+impl ICharacterBody2D for PlayerNode {
     fn init(base: Base<CharacterBody2D>) -> Self {
         Self {
             speed: 200.0,
@@ -72,7 +72,7 @@ impl ICharacterBody2D for Player {
 }
 
 #[godot_api]
-impl Player {
+impl PlayerNode {
     #[func]
     pub fn set_as_local_player(&mut self) {
         self.is_local_player = true;
