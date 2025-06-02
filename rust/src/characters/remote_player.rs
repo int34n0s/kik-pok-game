@@ -4,6 +4,9 @@ use godot::prelude::*;
 
 use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D};
 
+const MIN_DISTANCE_TO_SNAP: f32 = 0.3;
+const INTERPOLATION_LERP_WEIGHT: f32 = 9.0;
+
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
 pub struct RemotePlayerNode {
@@ -28,9 +31,6 @@ impl ICharacterBody2D for RemotePlayerNode {
     fn physics_process(&mut self, delta: f64) {
         let current_global_pos = self.base().get_global_position();
         let target_global_pos = self.position;
-
-        const MIN_DISTANCE_TO_SNAP: f32 = 1.0;
-        const INTERPOLATION_LERP_WEIGHT: f32 = 15.0;
 
         let distance_to_target = current_global_pos.distance_to(target_global_pos);
 
