@@ -25,19 +25,34 @@ impl ICharacterBody2D for RemotePlayerNode {
         }
     }
 
-    fn physics_process(&mut self, _delta: f64) {
-        self.base_mut().move_and_slide();
+    fn physics_process(&mut self, delta: f64) {
+        let current_global_pos = self.base().get_global_position();
+        let target_global_pos = self.position;
 
-        let new_position = self.position;
-        let current_position = self.base().get_global_position();
+        const MIN_DISTANCE_TO_SNAP: f32 = 1.0;
+        const INTERPOLATION_LERP_WEIGHT: f32 = 15.0;
 
-        self.base_mut().set_global_position(new_position);
+        let distance_to_target = current_global_pos.distance_to(target_global_pos);
 
-        let direction = self.position.x - current_position.x;
-        let is_on_floor = self.base().is_on_floor() && self.position.y == current_position.y;
-
+        let direction = self.position.x - current_global_pos.x;
+        let is_on_floor = self.base().is_on_floor();
         if let Some(animated_sprite) = &mut self.animated_sprite {
             handle_player_animation(animated_sprite, direction, is_on_floor);
+        }
+
+        self.base_mut().move_and_slide();
+
+        if distance_to_target > MIN_DISTANCE_TO_SNAP {
+            let interpolation_alpha = (INTERPOLATION_LERP_WEIGHT * delta as f32).clamp(0.0, 1.0);
+
+            let new_interpolated_pos =
+                current_global_pos.lerp(target_global_pos, interpolation_alpha);
+
+            self.base_mut().set_global_position(new_interpolated_pos);
+        } else {
+            self.position = target_global_pos;
+
+            self.base_mut().set_global_position(target_global_pos);
         }
     }
 
