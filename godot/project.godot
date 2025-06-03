@@ -45,7 +45,10 @@ move_left={
 
 [physics]
 
+common/physics_ticks_per_second=50
+common/physics_jitter_fix=1.35
 3d/physics_engine="Jolt Physics"
+common/physics_interpolation=true
 
 [rendering]
 
