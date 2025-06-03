@@ -19,7 +19,7 @@ pub struct LocalPlayerNode {
 impl ICharacterBody2D for LocalPlayerNode {
     fn init(base: Base<CharacterBody2D>) -> Self {
         Self {
-            speed: 200.0,
+            speed: 100.0,
             jump_velocity: -300.0,
             animated_sprite: None,
             base,

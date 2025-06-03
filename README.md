@@ -1,1 +1,3 @@
 # Kik-Pok Game Monorepo
+
+This is a multiplayer game where the users ...
