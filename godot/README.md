@@ -37,3 +37,4 @@ Artifacts: ones that can improve player stats: jump boosts, speed boosts, etc. (
 
 The most important part: player interaction with the world. What can be changed by the player? How much freedom he has, etc. 
 
+Yeah, and one more: there is a need for the world to be generated on the serve side, based on the client preset.
