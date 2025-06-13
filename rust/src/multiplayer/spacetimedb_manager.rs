@@ -2,7 +2,10 @@ use crate::multiplayer::spacetimedb_client;
 use crate::register_player_reducer::register_player;
 use crate::update_position_reducer::update_position;
 
-use crate::{CONNECTION_STATE, DbConnection, ErrorContext, PlayerScoreTableAccess, collect_coin, register_coin, DbPlayer};
+use crate::{
+    CONNECTION_STATE, DbConnection, DbPlayer, ErrorContext, PlayerScoreTableAccess, collect_coin,
+    register_coin,
+};
 use crate::{CoinTableAccess, DbVector2, PlayerTableAccess, WorldSceneTableAccess};
 
 use std::collections::hash_map::DefaultHasher;
@@ -45,24 +48,24 @@ impl SpacetimeDBManager {
         let host = host.to_string();
         let db_name = db_name.to_string();
 
-        let connection = match Self::connect_to_db(&host, &db_name) {
-            Ok(conn) => {
-                conn.subscription_builder()
-                    .subscribe("SELECT * FROM player");
-
-                Some(conn)
-            }
-            Err(e) => {
-                godot_error!("Couldn't connect to db {}: {}", db_name, e);
-
-                None
-            }
-        };
+        // let connection = match Self::connect_to_db(&host, &db_name) {
+        //     Ok(conn) => {
+        //         conn.subscription_builder()
+        //             .subscribe("SELECT * FROM player");
+        //
+        //         Some(conn)
+        //     }
+        //     Err(e) => {
+        //         godot_error!("Couldn't connect to db {}: {}", db_name, e);
+        //
+        //         None
+        //     }
+        // };
 
         Self {
             host,
             db_name,
-            connection,
+            connection: None,
             state: ConnectionState::Disconnected,
             scene_id: None,
             player_name: None,
@@ -74,15 +77,15 @@ impl SpacetimeDBManager {
             return Err("Already connected or connecting".to_string());
         }
 
-        if self.connection.is_none() {
-            godot_error!("Expected to be connected to SpacetimeDB at {}", self.host);
+        // if self.connection.is_none() {
+        //     godot_error!("Expected to be connected to SpacetimeDB at {}", self.host);
+        //
+        //     return Ok(());
+        // }
 
-            return Ok(());
-        }
-
-        if let Some(connection) = &self.connection {
-            connection.disconnect().map_err(|e| e.to_string())?;
-        }
+        // if let Some(connection) = &self.connection {
+        //     connection.disconnect().map_err(|e| e.to_string())?;
+        // }
 
         self.state = ConnectionState::Connecting;
         self.player_name = Some(username.to_string());
@@ -93,18 +96,16 @@ impl SpacetimeDBManager {
 
                 connection
                     .reducers
-                    .on_register_player(|ctx, _name, _scene_id| {
-                        match &ctx.event.status {
-                            spacetimedb_sdk::Status::Committed => {
-                                godot_print!("Player registration committed successfully");
-                                CONNECTION_STATE.store(1, Ordering::SeqCst);
-                            }
-                            spacetimedb_sdk::Status::Failed(e) => {
-                                godot_print!("Player registration failed: {}", e);
-                            }
-                            spacetimedb_sdk::Status::OutOfEnergy => {
-                                godot_print!("Player registration failed: Out of energy");
-                            }
+                    .on_register_player(|ctx, _name, _scene_id| match &ctx.event.status {
+                        spacetimedb_sdk::Status::Committed => {
+                            godot_print!("Player registration committed successfully");
+                            CONNECTION_STATE.store(1, Ordering::SeqCst);
+                        }
+                        spacetimedb_sdk::Status::Failed(e) => {
+                            godot_print!("Player registration failed: {}", e);
+                        }
+                        spacetimedb_sdk::Status::OutOfEnergy => {
+                            godot_print!("Player registration failed: Out of energy");
                         }
                     });
 
@@ -217,17 +218,10 @@ impl SpacetimeDBManager {
 }
 
 impl SpacetimeDBManager {
-    pub fn register_player(
-        &mut self,
-        username: String,
-        scene_id: u32,
-    ) -> Result<(), String> {
+    pub fn register_player(&mut self, username: String, scene_id: u32) -> Result<(), String> {
         let connection = self.connection.as_ref().ok_or("No connection available")?;
 
-        match connection
-            .reducers
-            .register_player(username, scene_id)
-        {
+        match connection.reducers.register_player(username, scene_id) {
             Ok(_) => {
                 godot_print!("Player registration request sent successfully!");
 
@@ -243,13 +237,25 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn update_position(&self, positioning: DbVector2) -> Result<(), String> {
+    pub fn send_inputs(
+        &self,
+        direction: i32,
+        is_jumping: bool,
+        position: Vector2,
+    ) -> Result<(), String> {
         if self.state != ConnectionState::LoggedIn {
             return Err("Not logged in".to_string());
         }
 
         let connection = self.connection.as_ref().ok_or("No connection available")?;
-        match connection.reducers.update_position(positioning) {
+        match connection.reducers.update_position(
+            direction,
+            is_jumping,
+            DbVector2 {
+                x: position.x,
+                y: position.y,
+            },
+        ) {
             Ok(_) => Ok(()),
             Err(e) => {
                 let error_msg = format!("Failed to update position: {}", e);

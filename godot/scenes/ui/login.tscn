@@ -15,6 +15,7 @@ layout_mode = 2
 theme = ExtResource("2_ebl7d")
 
 [node name="LoginScreen" type="LoginScreen" parent="PanelContainer"]
+physics_interpolation_mode = 0
 layout_mode = 2
 theme = ExtResource("2_ebl7d")
 

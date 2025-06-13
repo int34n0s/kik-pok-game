@@ -1,6 +1,6 @@
 use crate::*;
 
-use godot::classes::{INode, Label, Node, PackedScene, ResourceLoader};
+use godot::classes::{Engine, INode, Label, Node, PackedScene, ResourceLoader};
 use godot::prelude::*;
 
 use spacetimedb_sdk::Identity;
@@ -36,7 +36,10 @@ impl INode for MultiplayerManager {
         self.handle_multiplayer_updates();
     }
 
-    fn ready(&mut self) {}
+    fn ready(&mut self) {
+        let mut engine = Engine::singleton();
+        engine.set_max_fps(60);
+    }
 }
 
 #[godot_api]
@@ -65,9 +68,13 @@ impl MultiplayerManager {
             current_remote_players.insert(player.identity);
 
             if let Some(remote_player) = self.remote_players.get_mut(&player.identity) {
-                remote_player
-                    .bind_mut()
-                    .set_player_position(player.positioning.into());
+                let position = Vector2::new(player.position.x, player.position.y);
+
+                remote_player.bind_mut().set_player_position(
+                    player.direction,
+                    player.is_jumping,
+                    position,
+                );
 
                 continue;
             }
@@ -91,7 +98,7 @@ impl MultiplayerManager {
     fn spawn_remote_player(&mut self, player: &DbPlayer) {
         let player_id = player.identity;
         let name = &player.name;
-        let position = Vector2::new(player.positioning.x, player.positioning.y);
+        let position = Vector2::new(player.position.x, player.position.y);
 
         godot_print!(
             "Spawning remote player {} ({}) at ({}, {})",

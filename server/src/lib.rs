@@ -2,9 +2,9 @@ mod elements;
 
 use elements::*;
 
-use spacetimedb::{ReducerContext, Table};
+use spacetimedb::{reducer, table, ReducerContext, ScheduleAt, Table, TimeDuration};
 
-#[spacetimedb::reducer(init)]
+#[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
     log::trace!("Initializing...");
 
@@ -13,10 +13,38 @@ pub fn init(ctx: &ReducerContext) -> Result<(), String> {
         DbVector2 { x: -15.0, y: -25.0 },
     ));
 
+    // let loop_duration: TimeDuration = TimeDuration::from_micros(10_000_000);
+    // ctx.db.send_message_schedule().insert(SendMessageSchedule {
+    //     scheduled_id: 0,
+    //     scheduled_at: loop_duration.into(),
+    // });
+
     Ok(())
 }
 
-#[spacetimedb::reducer(client_connected)]
+#[table(name = send_message_schedule, scheduled(send_message))]
+struct SendMessageSchedule {
+    /// An identifier for the scheduled reducer call.
+    #[primary_key]
+    #[auto_inc]
+    scheduled_id: u64,
+
+    /// Information about when the reducer should be called.
+    scheduled_at: ScheduleAt,
+}
+
+#[reducer]
+fn send_message(ctx: &ReducerContext, _arg: SendMessageSchedule) -> Result<(), String> {
+    if ctx.sender != ctx.identity() {
+        return Err(
+            "Reducer `send_message` may not be invoked by clients, only via scheduling.".into(),
+        );
+    }
+
+    Ok(())
+}
+
+#[reducer(client_connected)]
 pub fn identity_connected(ctx: &ReducerContext) -> Result<(), String> {
     log::trace!(
         "The identity_connected reducer was called by {}.",
@@ -40,7 +68,7 @@ pub fn identity_connected(ctx: &ReducerContext) -> Result<(), String> {
     Ok(())
 }
 
-#[spacetimedb::reducer(client_disconnected)]
+#[reducer(client_disconnected)]
 pub fn identity_disconnected(ctx: &ReducerContext) -> Result<(), String> {
     log::trace!(
         "The identity_disconnected reducer was called by {}.",
@@ -56,7 +84,7 @@ pub fn identity_disconnected(ctx: &ReducerContext) -> Result<(), String> {
     Ok(())
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn register_scene(
     ctx: &ReducerContext,
     scene_name: String,
@@ -93,7 +121,7 @@ pub fn register_scene(
     }
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn register_player(ctx: &ReducerContext, name: String, scene_id: u32) -> Result<(), String> {
     log::trace!(
         "Player {} is registering with name: {} in scene: {}",
@@ -125,7 +153,9 @@ pub fn register_player(ctx: &ReducerContext, name: String, scene_id: u32) -> Res
         player_id: 0,
         identity: ctx.sender,
         name: name.trim().to_string(),
-        positioning: scene.spawn_point,
+        position: scene.spawn_point,
+        direction: 0,
+        is_jumping: false,
     }) {
         Ok(player) => {
             log::info!(
@@ -144,8 +174,13 @@ pub fn register_player(ctx: &ReducerContext, name: String, scene_id: u32) -> Res
     }
 }
 
-#[spacetimedb::reducer]
-pub fn update_position(ctx: &ReducerContext, positioning: DbVector2) -> Result<(), String> {
+#[reducer]
+pub fn update_position(
+    ctx: &ReducerContext,
+    direction: i32,
+    is_jumping: bool,
+    position: DbVector2,
+) -> Result<(), String> {
     let mut player = ctx
         .db
         .player()
@@ -153,21 +188,24 @@ pub fn update_position(ctx: &ReducerContext, positioning: DbVector2) -> Result<(
         .find(ctx.sender)
         .ok_or("Player not registered")?;
 
-    player.positioning = positioning;
+    player.direction = direction;
+    player.is_jumping = is_jumping;
+    player.position = position;
 
     let _player = ctx.db.player().identity().update(player);
 
     log::trace!(
-        "Updated position for player {} to coordinates: ({}, {})",
+        "Updated position for player {} to direction: {} and is_jumping: {} and position: {:?}",
         ctx.sender,
-        _player.positioning.x,
-        _player.positioning.y,
+        _player.direction,
+        _player.is_jumping,
+        _player.position,
     );
 
     Ok(())
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn register_coin(
     ctx: &ReducerContext,
     position: DbVector2,
@@ -228,7 +266,7 @@ pub fn register_coin(
     }
 }
 
-#[spacetimedb::reducer]
+#[reducer]
 pub fn collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), String> {
     log::trace!(
         "Player {} is collecting a coin at position ({}, {})",

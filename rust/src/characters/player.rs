@@ -62,8 +62,10 @@ impl LocalPlayerNode {
             velocity.y += self.base().get_gravity().y * delta as f32;
         }
 
+        let jump_pressed = input.is_action_just_pressed("jump") && is_on_floor;
+
         // Handle jump
-        if input.is_action_just_pressed("jump") && is_on_floor {
+        if jump_pressed {
             velocity.y = self.jump_velocity;
         }
 
@@ -87,17 +89,18 @@ impl LocalPlayerNode {
         self.base_mut().set_velocity(velocity);
         self.base_mut().move_and_slide();
 
-        if direction != 0.0 || !is_on_floor {
-            let connection = GLOBAL_CONNECTION.lock().unwrap();
-            if !connection.is_connected() {
-                return;
-            }
+        // Send jump state: true when jumping (pressed this frame) OR moving upward
+        // This ensures remote players get the jump signal even with network timing issues
+        let is_jumping = jump_pressed || (!is_on_floor && velocity.y < 0.0);
 
-            let current_position = self.base().get_global_position();
-            match connection.update_position(current_position.into()) {
-                Ok(_) => {}
-                Err(e) => godot_print!("Failed to send position: {}", e),
-            }
+        let connection = GLOBAL_CONNECTION.lock().unwrap();
+        if !connection.is_connected() {
+            return;
+        }
+
+        match connection.send_inputs(direction as i32, is_jumping, self.base().get_position()) {
+            Ok(_) => {}
+            Err(e) => godot_print!("Failed to send inputs: {}", e),
         }
     }
 }

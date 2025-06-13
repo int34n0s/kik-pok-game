@@ -108,17 +108,17 @@ impl LoginScreen {
         initialize_connection("kik-pok");
 
         let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-        if !connection.is_connected() {
-            self.set_status("Connection not available");
-            return;
-        }
+        // if !connection.is_connected() {
+        //     self.set_status("Connection not available");
+        //     return;
+        // }
+        //
+        // if connection.is_player_logged_in(&username) {
+        //     self.set_status("A player with this username is already logged in");
+        //     return;
+        // }
 
-        if connection.is_player_logged_in(&username) {
-            self.set_status("A player with this username is already logged in");
-            return;
-        }
-
-        godot_print!("Reconnecting...");
+        // godot_print!("Reconnecting...");
 
         match connection.connect(&username) {
             Ok(_) => {
