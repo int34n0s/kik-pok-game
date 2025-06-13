@@ -93,9 +93,9 @@ impl CoinArea {
         if !connection.is_connected() {
             return;
         }
-        
+
         let local_player = body.try_cast::<LocalPlayerNode>();
-        if !local_player.is_ok() {
+        if local_player.is_err() {
             self.base_mut().queue_free();
 
             return;

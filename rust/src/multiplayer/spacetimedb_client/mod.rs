@@ -18,36 +18,42 @@ pub mod player_table;
 pub mod register_coin_reducer;
 pub mod register_player_reducer;
 pub mod register_scene_reducer;
+pub mod send_message_reducer;
+pub mod send_message_schedule_table;
+pub mod send_message_schedule_type;
 pub mod update_position_reducer;
 pub mod world_scene_table;
 pub mod world_scene_type;
 
 pub use coin_table::*;
 pub use coin_type::Coin;
-pub use collect_coin_reducer::{collect_coin, set_flags_for_collect_coin, CollectCoinCallbackId};
+pub use collect_coin_reducer::{CollectCoinCallbackId, collect_coin, set_flags_for_collect_coin};
 pub use db_player_type::DbPlayer;
 pub use db_vector_2_type::DbVector2;
 pub use identity_connected_reducer::{
-    identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId,
+    IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected,
 };
 pub use identity_disconnected_reducer::{
-    identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
+    IdentityDisconnectedCallbackId, identity_disconnected, set_flags_for_identity_disconnected,
 };
 pub use logged_out_player_table::*;
 pub use player_score_table::*;
 pub use player_score_type::PlayerScore;
 pub use player_table::*;
 pub use register_coin_reducer::{
-    register_coin, set_flags_for_register_coin, RegisterCoinCallbackId,
+    RegisterCoinCallbackId, register_coin, set_flags_for_register_coin,
 };
 pub use register_player_reducer::{
-    register_player, set_flags_for_register_player, RegisterPlayerCallbackId,
+    RegisterPlayerCallbackId, register_player, set_flags_for_register_player,
 };
 pub use register_scene_reducer::{
-    register_scene, set_flags_for_register_scene, RegisterSceneCallbackId,
+    RegisterSceneCallbackId, register_scene, set_flags_for_register_scene,
 };
+pub use send_message_reducer::{SendMessageCallbackId, send_message, set_flags_for_send_message};
+pub use send_message_schedule_table::*;
+pub use send_message_schedule_type::SendMessageSchedule;
 pub use update_position_reducer::{
-    set_flags_for_update_position, update_position, UpdatePositionCallbackId,
+    UpdatePositionCallbackId, set_flags_for_update_position, update_position,
 };
 pub use world_scene_table::*;
 pub use world_scene_type::WorldScene;
@@ -77,8 +83,13 @@ pub enum Reducer {
         scene_name: String,
         spawn_point: DbVector2,
     },
+    SendMessage {
+        arg: SendMessageSchedule,
+    },
     UpdatePosition {
-        positioning: DbVector2,
+        direction: i32,
+        is_jumping: bool,
+        position: DbVector2,
     },
 }
 
@@ -95,6 +106,7 @@ impl __sdk::Reducer for Reducer {
             Reducer::RegisterCoin { .. } => "register_coin",
             Reducer::RegisterPlayer { .. } => "register_player",
             Reducer::RegisterScene { .. } => "register_scene",
+            Reducer::SendMessage { .. } => "send_message",
             Reducer::UpdatePosition { .. } => "update_position",
         }
     }
@@ -130,6 +142,13 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
                 register_scene_reducer::RegisterSceneArgs,
             >("register_scene", &value.args)?
             .into()),
+            "send_message" => Ok(
+                __sdk::parse_reducer_args::<send_message_reducer::SendMessageArgs>(
+                    "send_message",
+                    &value.args,
+                )?
+                .into(),
+            ),
             "update_position" => Ok(__sdk::parse_reducer_args::<
                 update_position_reducer::UpdatePositionArgs,
             >("update_position", &value.args)?
@@ -152,6 +171,7 @@ pub struct DbUpdate {
     logged_out_player: __sdk::TableUpdate<DbPlayer>,
     player: __sdk::TableUpdate<DbPlayer>,
     player_score: __sdk::TableUpdate<PlayerScore>,
+    send_message_schedule: __sdk::TableUpdate<SendMessageSchedule>,
     world_scene: __sdk::TableUpdate<WorldScene>,
 }
 
@@ -169,6 +189,10 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
                 "player" => db_update.player = player_table::parse_table_update(table_update)?,
                 "player_score" => {
                     db_update.player_score = player_score_table::parse_table_update(table_update)?
+                }
+                "send_message_schedule" => {
+                    db_update.send_message_schedule =
+                        send_message_schedule_table::parse_table_update(table_update)?
                 }
                 "world_scene" => {
                     db_update.world_scene = world_scene_table::parse_table_update(table_update)?
@@ -211,6 +235,12 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.player_score = cache
             .apply_diff_to_table::<PlayerScore>("player_score", &self.player_score)
             .with_updates_by_pk(|row| &row.score_id);
+        diff.send_message_schedule = cache
+            .apply_diff_to_table::<SendMessageSchedule>(
+                "send_message_schedule",
+                &self.send_message_schedule,
+            )
+            .with_updates_by_pk(|row| &row.scheduled_id);
         diff.world_scene = cache
             .apply_diff_to_table::<WorldScene>("world_scene", &self.world_scene)
             .with_updates_by_pk(|row| &row.scene_id);
@@ -227,6 +257,7 @@ pub struct AppliedDiff<'r> {
     logged_out_player: __sdk::TableAppliedDiff<'r, DbPlayer>,
     player: __sdk::TableAppliedDiff<'r, DbPlayer>,
     player_score: __sdk::TableAppliedDiff<'r, PlayerScore>,
+    send_message_schedule: __sdk::TableAppliedDiff<'r, SendMessageSchedule>,
     world_scene: __sdk::TableAppliedDiff<'r, WorldScene>,
 }
 
@@ -250,6 +281,11 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         callbacks.invoke_table_row_callbacks::<PlayerScore>(
             "player_score",
             &self.player_score,
+            event,
+        );
+        callbacks.invoke_table_row_callbacks::<SendMessageSchedule>(
+            "send_message_schedule",
+            &self.send_message_schedule,
             event,
         );
         callbacks.invoke_table_row_callbacks::<WorldScene>("world_scene", &self.world_scene, event);
@@ -495,21 +531,21 @@ impl __sdk::SubscriptionHandle for SubscriptionHandle {
 /// either a [`DbConnection`] or an [`EventContext`] and operate on either.
 pub trait RemoteDbContext:
     __sdk::DbContext<
-    DbView = RemoteTables,
-    Reducers = RemoteReducers,
-    SetReducerFlags = SetReducerFlags,
-    SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
->
+        DbView = RemoteTables,
+        Reducers = RemoteReducers,
+        SetReducerFlags = SetReducerFlags,
+        SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
+    >
 {
 }
 impl<
-        Ctx: __sdk::DbContext<
+    Ctx: __sdk::DbContext<
             DbView = RemoteTables,
             Reducers = RemoteReducers,
             SetReducerFlags = SetReducerFlags,
             SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
         >,
-    > RemoteDbContext for Ctx
+> RemoteDbContext for Ctx
 {
 }
 
@@ -832,6 +868,7 @@ impl __sdk::SpacetimeModule for RemoteModule {
         logged_out_player_table::register_table(client_cache);
         player_table::register_table(client_cache);
         player_score_table::register_table(client_cache);
+        send_message_schedule_table::register_table(client_cache);
         world_scene_table::register_table(client_cache);
     }
 }

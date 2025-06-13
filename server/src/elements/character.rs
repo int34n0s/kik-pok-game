@@ -14,5 +14,9 @@ pub struct DbPlayer {
     pub player_id: u32,
 
     pub name: String,
-    pub positioning: DbVector2,
+
+    pub position: DbVector2,
+
+    pub direction: i32,
+    pub is_jumping: bool,
 }
