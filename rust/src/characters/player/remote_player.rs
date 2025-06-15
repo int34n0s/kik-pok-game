@@ -1,19 +1,18 @@
-use crate::handle_player_animation;
-
 use godot::prelude::*;
 use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D};
+use super::BasicPlayer;
 
 /// Reduced strength to prevent jittering
 const POSITION_CORRECTION_STRENGTH: f32 = 0.05;
 /// Max distance before we snap instead of interpolate
 const MAX_CORRECTION_DISTANCE: f32 = 100.0;
 /// Don't correct small differences to reduce jittering
-const CORRECTION_DEADBAND: f32 = 12.0;
+const CORRECTION_DEADBAND: f32 = 1.0;
 
 /// Frames before vertical correction teleport
 const VERTICAL_DIFF_FRAME_THRESHOLD: i32 = 10;
 /// Frames before deadband teleport
-const DEADBAND_FRAME_THRESHOLD: i32 = 30;
+const DEADBAND_FRAME_THRESHOLD: i32 = 60;
 /// Minimum vertical difference to trigger correction
 const VERTICAL_DIFF_THRESHOLD: f32 = 3.0;
 
@@ -27,8 +26,7 @@ struct RemoteState {
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
 pub struct RemotePlayerNode {
-    speed: f32,
-    jump_velocity: f32,
+    basic_player: BasicPlayer,
 
     /// Server state
     last_server_state: Option<RemoteState>,
@@ -45,8 +43,6 @@ pub struct RemotePlayerNode {
     /// Count frames for deadband condition
     deadband_frame_count: i32,
 
-    animated_sprite: Option<Gd<AnimatedSprite2D>>,
-
     #[base]
     base: Base<CharacterBody2D>,
 }
@@ -55,16 +51,20 @@ pub struct RemotePlayerNode {
 impl ICharacterBody2D for RemotePlayerNode {
     fn init(base: Base<CharacterBody2D>) -> Self {
         Self {
-            speed: 100.0,
-            jump_velocity: -300.0,
+            basic_player: BasicPlayer::new(),
             last_server_state: None,
             current_direction: 0,
             current_jumping: false,
             was_jumping: false,
             vertical_diff_frame_count: 0,
             deadband_frame_count: 0,
-            animated_sprite: None,
             base,
+        }
+    }
+
+    fn ready(&mut self) {
+        if let Some(animated_sprite) = self.base().try_get_node_as::<AnimatedSprite2D>("AnimatedSprite2D") {
+            self.basic_player.animated_sprite = Some(animated_sprite);
         }
     }
 
@@ -72,50 +72,29 @@ impl ICharacterBody2D for RemotePlayerNode {
         let mut velocity = self.base().get_velocity();
         let is_on_floor = self.base().is_on_floor();
 
-        // Apply gravity when not on floor
         if !is_on_floor {
             velocity.y += self.base().get_gravity().y * delta as f32;
         }
 
-        // Handle jump input - only jump when transitioning from not jumping to jumping
+        // Handle jump input using basic player - only jump when transitioning from not jumping to jumping
         let new_jump = self.current_jumping && !self.was_jumping && is_on_floor;
         if new_jump {
-            velocity.y = self.jump_velocity;
+            self.basic_player.handle_jump(&mut velocity);
         }
 
         // Update previous jump state for next frame
         self.was_jumping = self.current_jumping;
 
-        // Handle horizontal movement from current inputs
-        if self.current_direction != 0 {
-            velocity.x = self.current_direction as f32 * self.speed;
-        } else {
-            velocity.x =
-                godot::global::move_toward(velocity.x as f64, 0.0, self.speed as f64) as f32;
-        }
+        self.basic_player.apply_horizontal_movement(&mut velocity, self.current_direction as f32);
 
-        // Apply position correction if we have server data
         if let Some(server_state) = self.last_server_state.clone() {
             self.apply_position_correction(&server_state, delta);
         }
 
-        // Update velocity and move using Godot's physics
         self.base_mut().set_velocity(velocity);
         self.base_mut().move_and_slide();
 
-        // Handle animations
-        if let Some(animated_sprite) = &mut self.animated_sprite {
-            handle_player_animation(animated_sprite, self.current_direction as f32, is_on_floor);
-        }
-    }
-
-    fn ready(&mut self) {
-        if let Some(animated_sprite) = self
-            .base()
-            .try_get_node_as::<AnimatedSprite2D>("AnimatedSprite2D")
-        {
-            self.animated_sprite = Some(animated_sprite);
-        }
+        self.basic_player.handle_animation(self.current_direction as f32, is_on_floor);
     }
 }
 
