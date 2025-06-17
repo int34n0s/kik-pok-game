@@ -1,8 +1,8 @@
 use godot::prelude::*;
 
+use super::BasicPlayer;
 use crate::GLOBAL_CONNECTION;
 use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, Input};
-use super::BasicPlayer;
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -27,7 +27,10 @@ impl ICharacterBody2D for LocalPlayerNode {
     }
 
     fn ready(&mut self) {
-        if let Some(animated_sprite) = self.base().try_get_node_as::<AnimatedSprite2D>("AnimatedSprite2D") {
+        if let Some(animated_sprite) = self
+            .base()
+            .try_get_node_as::<AnimatedSprite2D>("AnimatedSprite2D")
+        {
             self.basic_player.animated_sprite = Some(animated_sprite);
         } else {
             godot_print!("Failed to find animated sprite");
@@ -61,7 +64,8 @@ impl LocalPlayerNode {
         }
 
         // Apply horizontal movement using basic player
-        self.basic_player.apply_horizontal_movement(&mut velocity, direction);
+        self.basic_player
+            .apply_horizontal_movement(&mut velocity, direction);
 
         // Update velocity and move
         self.base_mut().set_velocity(velocity);
@@ -72,7 +76,7 @@ impl LocalPlayerNode {
 
         self.send_inputs(direction, jump_pressed, is_on_floor);
     }
-    
+
     fn send_inputs(&self, direction: f32, jump_pressed: bool, is_on_floor: bool) {
         let updated_velocity = self.base().get_velocity();
         let is_jumping = jump_pressed || (!is_on_floor && updated_velocity.y < 0.0);

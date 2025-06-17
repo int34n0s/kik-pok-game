@@ -1,5 +1,5 @@
+use godot::classes::AnimatedSprite2D;
 use godot::prelude::*;
-use godot::classes::{AnimatedSprite2D};
 
 use crate::handle_player_animation;
 
@@ -7,6 +7,12 @@ pub struct BasicPlayer {
     pub speed: f32,
     pub jump_velocity: f32,
     pub animated_sprite: Option<Gd<AnimatedSprite2D>>,
+}
+
+impl Default for BasicPlayer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl BasicPlayer {
@@ -26,7 +32,8 @@ impl BasicPlayer {
         if direction != 0.0 {
             velocity.x = direction * self.speed;
         } else {
-            velocity.x = godot::global::move_toward(velocity.x as f64, 0.0, self.speed as f64) as f32;
+            velocity.x =
+                godot::global::move_toward(velocity.x as f64, 0.0, self.speed as f64) as f32;
         }
     }
 

@@ -1,6 +1,7 @@
-use godot::prelude::*;
-use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D};
 use super::BasicPlayer;
+
+use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D};
+use godot::prelude::*;
 
 /// Reduced strength to prevent jittering
 const POSITION_CORRECTION_STRENGTH: f32 = 0.05;
@@ -63,7 +64,10 @@ impl ICharacterBody2D for RemotePlayerNode {
     }
 
     fn ready(&mut self) {
-        if let Some(animated_sprite) = self.base().try_get_node_as::<AnimatedSprite2D>("AnimatedSprite2D") {
+        if let Some(animated_sprite) = self
+            .base()
+            .try_get_node_as::<AnimatedSprite2D>("AnimatedSprite2D")
+        {
             self.basic_player.animated_sprite = Some(animated_sprite);
         }
     }
@@ -85,7 +89,8 @@ impl ICharacterBody2D for RemotePlayerNode {
         // Update previous jump state for next frame
         self.was_jumping = self.current_jumping;
 
-        self.basic_player.apply_horizontal_movement(&mut velocity, self.current_direction as f32);
+        self.basic_player
+            .apply_horizontal_movement(&mut velocity, self.current_direction as f32);
 
         if let Some(server_state) = self.last_server_state.clone() {
             self.apply_position_correction(&server_state, delta);
@@ -94,7 +99,8 @@ impl ICharacterBody2D for RemotePlayerNode {
         self.base_mut().set_velocity(velocity);
         self.base_mut().move_and_slide();
 
-        self.basic_player.handle_animation(self.current_direction as f32, is_on_floor);
+        self.basic_player
+            .handle_animation(self.current_direction as f32, is_on_floor);
     }
 }
 
@@ -112,7 +118,7 @@ impl RemotePlayerNode {
             direction,
             is_jumping,
         });
-        
+
         self.current_direction = direction;
         self.current_jumping = is_jumping;
     }

@@ -7,7 +7,7 @@ use godot::prelude::*;
 #[class(base=Area2D)]
 pub struct CoinArea {
     game_manager: Option<Gd<GameManager>>,
-    
+
     animation_player: Option<Gd<AnimationPlayer>>,
 
     #[base]
