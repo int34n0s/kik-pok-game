@@ -1,4 +1,5 @@
-use crate::DbVector2;
+use crate::elements::DbVector2;
+
 use spacetimedb::Identity;
 
 #[spacetimedb::table(name = player_score, public)]

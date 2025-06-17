@@ -4,7 +4,7 @@
 #![allow(unused, clippy::all)]
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
-use super::db_vector_2_type::DbVector2;
+use super::db_player_state_type::DbPlayerState;
 
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
@@ -12,9 +12,7 @@ pub struct DbPlayer {
     pub identity: __sdk::Identity,
     pub player_id: u32,
     pub name: String,
-    pub position: DbVector2,
-    pub direction: i32,
-    pub is_jumping: bool,
+    pub state: DbPlayerState,
 }
 
 impl __sdk::InModule for DbPlayer {

@@ -1,14 +1,9 @@
-use crate::elements::{player, DbVector2};
+use crate::elements::{player, DBPlayerState};
 
 use spacetimedb::{reducer, ReducerContext};
 
 #[reducer]
-pub fn update_position(
-    ctx: &ReducerContext,
-    direction: i32,
-    is_jumping: bool,
-    position: DbVector2,
-) -> Result<(), String> {
+pub fn send_player_state(ctx: &ReducerContext, state: DBPlayerState) -> Result<(), String> {
     let mut player = ctx
         .db
         .player()
@@ -16,18 +11,14 @@ pub fn update_position(
         .find(ctx.sender)
         .ok_or("Player not registered")?;
 
-    player.direction = direction;
-    player.is_jumping = is_jumping;
-    player.position = position;
+    player.state = state;
 
     let _player = ctx.db.player().identity().update(player);
 
     log::trace!(
-        "Updated position for player {} to direction: {} and is_jumping: {} and position: {:?}",
+        "Updated position for player {} to {:?}",
         ctx.sender,
-        _player.direction,
-        _player.is_jumping,
-        _player.position,
+        _player.state
     );
 
     Ok(())
