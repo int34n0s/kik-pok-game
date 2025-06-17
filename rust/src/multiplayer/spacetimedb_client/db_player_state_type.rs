@@ -4,13 +4,16 @@
 #![allow(unused, clippy::all)]
 use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
+use super::db_vector_2_type::DbVector2;
+
 #[derive(__lib::ser::Serialize, __lib::de::Deserialize, Clone, PartialEq, Debug)]
 #[sats(crate = __lib)]
-pub struct SendMessageSchedule {
-    pub scheduled_id: u64,
-    pub scheduled_at: __sdk::ScheduleAt,
+pub struct DbPlayerState {
+    pub position: DbVector2,
+    pub direction: i32,
+    pub is_jumping: bool,
 }
 
-impl __sdk::InModule for SendMessageSchedule {
+impl __sdk::InModule for DbPlayerState {
     type Module = super::RemoteModule;
 }

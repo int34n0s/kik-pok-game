@@ -7,53 +7,39 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 pub mod coin_table;
 pub mod coin_type;
 pub mod collect_coin_reducer;
+pub mod db_player_state_type;
 pub mod db_player_type;
 pub mod db_vector_2_type;
 pub mod identity_connected_reducer;
 pub mod identity_disconnected_reducer;
-pub mod logged_out_player_table;
 pub mod player_score_table;
 pub mod player_score_type;
 pub mod player_table;
-pub mod register_coin_reducer;
 pub mod register_player_reducer;
-pub mod register_scene_reducer;
-pub mod send_message_reducer;
-pub mod send_message_schedule_table;
-pub mod send_message_schedule_type;
-pub mod update_position_reducer;
+pub mod send_player_state_reducer;
 pub mod world_scene_table;
 pub mod world_scene_type;
 
 pub use coin_table::*;
 pub use coin_type::Coin;
-pub use collect_coin_reducer::{CollectCoinCallbackId, collect_coin, set_flags_for_collect_coin};
+pub use collect_coin_reducer::{collect_coin, set_flags_for_collect_coin, CollectCoinCallbackId};
+pub use db_player_state_type::DbPlayerState;
 pub use db_player_type::DbPlayer;
 pub use db_vector_2_type::DbVector2;
 pub use identity_connected_reducer::{
-    IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected,
+    identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId,
 };
 pub use identity_disconnected_reducer::{
-    IdentityDisconnectedCallbackId, identity_disconnected, set_flags_for_identity_disconnected,
+    identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
 };
-pub use logged_out_player_table::*;
 pub use player_score_table::*;
 pub use player_score_type::PlayerScore;
 pub use player_table::*;
-pub use register_coin_reducer::{
-    RegisterCoinCallbackId, register_coin, set_flags_for_register_coin,
-};
 pub use register_player_reducer::{
-    RegisterPlayerCallbackId, register_player, set_flags_for_register_player,
+    register_player, set_flags_for_register_player, RegisterPlayerCallbackId,
 };
-pub use register_scene_reducer::{
-    RegisterSceneCallbackId, register_scene, set_flags_for_register_scene,
-};
-pub use send_message_reducer::{SendMessageCallbackId, send_message, set_flags_for_send_message};
-pub use send_message_schedule_table::*;
-pub use send_message_schedule_type::SendMessageSchedule;
-pub use update_position_reducer::{
-    UpdatePositionCallbackId, set_flags_for_update_position, update_position,
+pub use send_player_state_reducer::{
+    send_player_state, set_flags_for_send_player_state, SendPlayerStateCallbackId,
 };
 pub use world_scene_table::*;
 pub use world_scene_type::WorldScene;
@@ -66,31 +52,11 @@ pub use world_scene_type::WorldScene;
 /// to indicate which reducer caused the event.
 
 pub enum Reducer {
-    CollectCoin {
-        position: DbVector2,
-    },
+    CollectCoin { position: DbVector2 },
     IdentityConnected,
     IdentityDisconnected,
-    RegisterCoin {
-        position: DbVector2,
-        scene_id: u32,
-    },
-    RegisterPlayer {
-        name: String,
-        scene_id: u32,
-    },
-    RegisterScene {
-        scene_name: String,
-        spawn_point: DbVector2,
-    },
-    SendMessage {
-        arg: SendMessageSchedule,
-    },
-    UpdatePosition {
-        direction: i32,
-        is_jumping: bool,
-        position: DbVector2,
-    },
+    RegisterPlayer { name: String, scene_id: u32 },
+    SendPlayerState { state: DbPlayerState },
 }
 
 impl __sdk::InModule for Reducer {
@@ -103,11 +69,8 @@ impl __sdk::Reducer for Reducer {
             Reducer::CollectCoin { .. } => "collect_coin",
             Reducer::IdentityConnected => "identity_connected",
             Reducer::IdentityDisconnected => "identity_disconnected",
-            Reducer::RegisterCoin { .. } => "register_coin",
             Reducer::RegisterPlayer { .. } => "register_player",
-            Reducer::RegisterScene { .. } => "register_scene",
-            Reducer::SendMessage { .. } => "send_message",
-            Reducer::UpdatePosition { .. } => "update_position",
+            Reducer::SendPlayerState { .. } => "send_player_state",
         }
     }
 }
@@ -130,28 +93,13 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
                 identity_disconnected_reducer::IdentityDisconnectedArgs,
             >("identity_disconnected", &value.args)?
             .into()),
-            "register_coin" => Ok(__sdk::parse_reducer_args::<
-                register_coin_reducer::RegisterCoinArgs,
-            >("register_coin", &value.args)?
-            .into()),
             "register_player" => Ok(__sdk::parse_reducer_args::<
                 register_player_reducer::RegisterPlayerArgs,
             >("register_player", &value.args)?
             .into()),
-            "register_scene" => Ok(__sdk::parse_reducer_args::<
-                register_scene_reducer::RegisterSceneArgs,
-            >("register_scene", &value.args)?
-            .into()),
-            "send_message" => Ok(
-                __sdk::parse_reducer_args::<send_message_reducer::SendMessageArgs>(
-                    "send_message",
-                    &value.args,
-                )?
-                .into(),
-            ),
-            "update_position" => Ok(__sdk::parse_reducer_args::<
-                update_position_reducer::UpdatePositionArgs,
-            >("update_position", &value.args)?
+            "send_player_state" => Ok(__sdk::parse_reducer_args::<
+                send_player_state_reducer::SendPlayerStateArgs,
+            >("send_player_state", &value.args)?
             .into()),
             unknown => {
                 Err(
@@ -168,10 +116,8 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
 #[doc(hidden)]
 pub struct DbUpdate {
     coin: __sdk::TableUpdate<Coin>,
-    logged_out_player: __sdk::TableUpdate<DbPlayer>,
     player: __sdk::TableUpdate<DbPlayer>,
     player_score: __sdk::TableUpdate<PlayerScore>,
-    send_message_schedule: __sdk::TableUpdate<SendMessageSchedule>,
     world_scene: __sdk::TableUpdate<WorldScene>,
 }
 
@@ -182,17 +128,9 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
         for table_update in raw.tables {
             match &table_update.table_name[..] {
                 "coin" => db_update.coin = coin_table::parse_table_update(table_update)?,
-                "logged_out_player" => {
-                    db_update.logged_out_player =
-                        logged_out_player_table::parse_table_update(table_update)?
-                }
                 "player" => db_update.player = player_table::parse_table_update(table_update)?,
                 "player_score" => {
                     db_update.player_score = player_score_table::parse_table_update(table_update)?
-                }
-                "send_message_schedule" => {
-                    db_update.send_message_schedule =
-                        send_message_schedule_table::parse_table_update(table_update)?
                 }
                 "world_scene" => {
                     db_update.world_scene = world_scene_table::parse_table_update(table_update)?
@@ -226,21 +164,12 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.coin = cache
             .apply_diff_to_table::<Coin>("coin", &self.coin)
             .with_updates_by_pk(|row| &row.coin_id);
-        diff.logged_out_player = cache
-            .apply_diff_to_table::<DbPlayer>("logged_out_player", &self.logged_out_player)
-            .with_updates_by_pk(|row| &row.identity);
         diff.player = cache
             .apply_diff_to_table::<DbPlayer>("player", &self.player)
             .with_updates_by_pk(|row| &row.identity);
         diff.player_score = cache
             .apply_diff_to_table::<PlayerScore>("player_score", &self.player_score)
             .with_updates_by_pk(|row| &row.score_id);
-        diff.send_message_schedule = cache
-            .apply_diff_to_table::<SendMessageSchedule>(
-                "send_message_schedule",
-                &self.send_message_schedule,
-            )
-            .with_updates_by_pk(|row| &row.scheduled_id);
         diff.world_scene = cache
             .apply_diff_to_table::<WorldScene>("world_scene", &self.world_scene)
             .with_updates_by_pk(|row| &row.scene_id);
@@ -254,10 +183,8 @@ impl __sdk::DbUpdate for DbUpdate {
 #[doc(hidden)]
 pub struct AppliedDiff<'r> {
     coin: __sdk::TableAppliedDiff<'r, Coin>,
-    logged_out_player: __sdk::TableAppliedDiff<'r, DbPlayer>,
     player: __sdk::TableAppliedDiff<'r, DbPlayer>,
     player_score: __sdk::TableAppliedDiff<'r, PlayerScore>,
-    send_message_schedule: __sdk::TableAppliedDiff<'r, SendMessageSchedule>,
     world_scene: __sdk::TableAppliedDiff<'r, WorldScene>,
 }
 
@@ -272,20 +199,10 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         callbacks: &mut __sdk::DbCallbacks<RemoteModule>,
     ) {
         callbacks.invoke_table_row_callbacks::<Coin>("coin", &self.coin, event);
-        callbacks.invoke_table_row_callbacks::<DbPlayer>(
-            "logged_out_player",
-            &self.logged_out_player,
-            event,
-        );
         callbacks.invoke_table_row_callbacks::<DbPlayer>("player", &self.player, event);
         callbacks.invoke_table_row_callbacks::<PlayerScore>(
             "player_score",
             &self.player_score,
-            event,
-        );
-        callbacks.invoke_table_row_callbacks::<SendMessageSchedule>(
-            "send_message_schedule",
-            &self.send_message_schedule,
             event,
         );
         callbacks.invoke_table_row_callbacks::<WorldScene>("world_scene", &self.world_scene, event);
@@ -531,21 +448,21 @@ impl __sdk::SubscriptionHandle for SubscriptionHandle {
 /// either a [`DbConnection`] or an [`EventContext`] and operate on either.
 pub trait RemoteDbContext:
     __sdk::DbContext<
-        DbView = RemoteTables,
-        Reducers = RemoteReducers,
-        SetReducerFlags = SetReducerFlags,
-        SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
-    >
+    DbView = RemoteTables,
+    Reducers = RemoteReducers,
+    SetReducerFlags = SetReducerFlags,
+    SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
+>
 {
 }
 impl<
-    Ctx: __sdk::DbContext<
+        Ctx: __sdk::DbContext<
             DbView = RemoteTables,
             Reducers = RemoteReducers,
             SetReducerFlags = SetReducerFlags,
             SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
         >,
-> RemoteDbContext for Ctx
+    > RemoteDbContext for Ctx
 {
 }
 
@@ -865,10 +782,8 @@ impl __sdk::SpacetimeModule for RemoteModule {
 
     fn register_tables(client_cache: &mut __sdk::ClientCache<Self>) {
         coin_table::register_table(client_cache);
-        logged_out_player_table::register_table(client_cache);
         player_table::register_table(client_cache);
         player_score_table::register_table(client_cache);
-        send_message_schedule_table::register_table(client_cache);
         world_scene_table::register_table(client_cache);
     }
 }
