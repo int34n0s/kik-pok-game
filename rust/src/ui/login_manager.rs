@@ -1,12 +1,25 @@
-use crate::{ConnectionState, GLOBAL_CONNECTION, initialize_connection};
+use crate::{ConnectionState, LevelManager, SpacetimeDBManager};
 
 use godot::classes::{Button, IVBoxContainer, Label, LineEdit, VBoxContainer};
 use godot::prelude::*;
 
+#[derive(Clone, PartialEq, Debug, Default)]
+pub enum LoginUIState {
+    #[default]
+    Initial,
+    LoginAttempted,
+    Connecting,
+    Connected,
+    LoggedIn,
+    Failed(String),
+}
+
 #[derive(GodotClass)]
 #[class(base=VBoxContainer)]
 pub struct LoginScreen {
-    // host_input: Option<Gd<LineEdit>>,
+    ui_state: LoginUIState,
+    level_manager: LevelManager,
+
     username_input: Option<Gd<LineEdit>>,
     login_button: Option<Gd<Button>>,
     status_label: Option<Gd<Label>>,
@@ -19,7 +32,8 @@ pub struct LoginScreen {
 impl IVBoxContainer for LoginScreen {
     fn init(base: Base<VBoxContainer>) -> Self {
         Self {
-            // host_input: None,
+            level_manager: LevelManager::new(),
+            ui_state: LoginUIState::Initial,
             username_input: None,
             login_button: None,
             status_label: None,
@@ -28,16 +42,53 @@ impl IVBoxContainer for LoginScreen {
     }
 
     fn process(&mut self, _delta: f64) {
-        let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-        if !connection.is_connected() {
+        self.update_status_from_state();
+
+        let Some(mut connection) = SpacetimeDBManager::get_write_connection() else {
+            if self.ui_state == LoginUIState::LoginAttempted {
+                self.update_status_with_failed_state("Could not get database connection!");
+            }
+
+            return;
+        };
+
+        if let Err(e) = connection.tick() {
+            if self.ui_state == LoginUIState::LoginAttempted
+                || self.ui_state == LoginUIState::Connecting
+            {
+                self.update_status_with_failed_state(&format!("Connection error: {:?}", e));
+            }
+
             return;
         }
 
-        if let Err(e) = connection.tick() {
-            self.set_status(&format!("Connection error: {}", e));
+        let login_state = connection.login_module.get_state().clone();
+        let should_check_and_login = connection.check_and_login();
+
+        drop(connection);
+
+        let new_ui_state = match login_state {
+            ConnectionState::Disconnected if !matches!(self.ui_state, LoginUIState::Initial) => {
+                Some(LoginUIState::Failed(
+                    "Tried to connect to db, change username please".to_string(),
+                ))
+            }
+            ConnectionState::Connected => Some(LoginUIState::Connected),
+            ConnectionState::LoggedIn => Some(LoginUIState::LoggedIn),
+            ConnectionState::LoginFailed(error)
+                if !matches!(self.ui_state, LoginUIState::Failed(_)) =>
+            {
+                Some(LoginUIState::Failed(error))
+            }
+            _ => None,
+        };
+
+        if let Some(new_state) = new_ui_state {
+            self.ui_state = new_state;
+            self.update_status_from_state();
         }
 
-        if connection.check_and_login() {
+        if should_check_and_login {
             self.transition_to_game();
         }
     }
@@ -45,21 +96,17 @@ impl IVBoxContainer for LoginScreen {
     fn ready(&mut self) {
         self.setup_node_references();
         self.connect_signals();
-        self.update_ui_state();
+        self.update_status_from_state();
     }
 }
 
 #[godot_api]
 impl LoginScreen {
     fn setup_node_references(&mut self) {
-        // self.host_input = self.base().try_get_node_as::<LineEdit>("HostInput");
         self.username_input = self.base().try_get_node_as::<LineEdit>("UsernameInput");
         self.login_button = self.base().try_get_node_as::<Button>("LoginButton");
         self.status_label = self.base().try_get_node_as::<Label>("StatusLabel");
 
-        // if self.host_input.is_none() {
-        //     godot_error!("Could not find HostInput node");
-        // }
         if self.username_input.is_none() {
             godot_error!("Could not find UsernameInput node");
         }
@@ -80,52 +127,33 @@ impl LoginScreen {
 
     #[func]
     fn on_login_pressed(&mut self) {
-        // let Some(host_input) = &self.host_input else {
-        //     godot_error!("Expected host_input");
-        //     return;
-        // };
-
         let Some(username_input) = &self.username_input else {
             godot_error!("Expected username_input");
-
             return;
         };
 
-        // let host = host_input.get_text().to_string();
         let username = username_input.get_text().to_string();
-        //
-        // if host.trim().is_empty() {
-        //     self.set_status("Please enter a host address");
-        //     return;
-        // }
 
         if username.trim().is_empty() {
-            self.set_status("Please enter a username");
+            self.update_status_with_failed_state("Please enter a username");
             return;
         }
 
-        self.set_status("Initializing connection...");
-        initialize_connection("kik-pok");
+        self.ui_state = LoginUIState::LoginAttempted;
 
-        let mut connection = GLOBAL_CONNECTION.lock().unwrap();
-        // if !connection.is_connected() {
-        //     self.set_status("Connection not available");
-        //     return;
-        // }
-        //
-        // if connection.is_player_logged_in(&username) {
-        //     self.set_status("A player with this username is already logged in");
-        //     return;
-        // }
+        let Some(mut connection) = SpacetimeDBManager::get_write_connection() else {
+            self.update_status_with_failed_state("Could not get database connection!");
+            return;
+        };
 
-        // godot_print!("Reconnecting...");
+        self.ui_state = LoginUIState::Connecting;
 
         match connection.connect(&username) {
             Ok(_) => {
-                self.set_status("Connected! Registering player...");
+                self.ui_state = LoginUIState::Connected;
             }
             Err(e) => {
-                self.set_status(&format!("Connection failed: {}", e));
+                self.update_status_with_failed_state(&format!("Connection failed: {}", e));
                 return;
             }
         }
@@ -135,9 +163,29 @@ impl LoginScreen {
                 self.set_status("Registration request sent...");
             }
             Err(e) => {
-                self.set_status(&format!("Registration failed: {}", e));
+                self.update_status_with_failed_state(&format!("Registration failed: {}", e));
+                return;
             }
         }
+    }
+
+    fn update_status_from_state(&mut self) {
+        let message = match &self.ui_state {
+            LoginUIState::Initial => "Enter username and click login".to_string(),
+            LoginUIState::LoginAttempted => "Initializing connection...".to_string(),
+            LoginUIState::Connecting => "Connecting to database...".to_string(),
+            LoginUIState::Connected => "Connected! Registering player...".to_string(),
+            LoginUIState::LoggedIn => "Login successful! Entering game...".to_string(),
+            LoginUIState::Failed(error) => error.clone(),
+        };
+
+        self.set_status(&message);
+    }
+
+    fn update_status_with_failed_state(&mut self, error: &str) {
+        godot_print!("Error: {}", error);
+        self.ui_state = LoginUIState::Failed(error.to_string());
+        self.update_status_from_state();
     }
 
     fn set_status(&mut self, message: &str) {
@@ -146,25 +194,10 @@ impl LoginScreen {
         }
     }
 
-    fn update_ui_state(&mut self) {
-        let state = GLOBAL_CONNECTION.lock().unwrap().get_connection_state();
-
-        if let Some(login_button) = &mut self.login_button {
-            login_button.set_disabled(state != ConnectionState::Disconnected);
-        }
-
-        if let Some(username_input) = &mut self.username_input {
-            username_input.set_editable(state == ConnectionState::Disconnected);
-        }
-
-        // if let Some(host_input) = &mut self.host_input {
-        //     host_input.set_editable(state == ConnectionState::Disconnected);
-        // }
-    }
-
     fn transition_to_game(&mut self) {
         if let Some(mut scene_tree) = self.base().get_tree() {
-            let _result = scene_tree.change_scene_to_file("res://scenes/main.tscn");
+            let error = scene_tree.change_scene_to_file(&self.level_manager.get_entry_scene_path());
+            godot_print!("Transitioned to game. State: {:?}", error);
         }
     }
 }

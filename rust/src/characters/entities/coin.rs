@@ -3,9 +3,11 @@ use crate::*;
 use godot::classes::{AnimationPlayer, Area2D, IArea2D};
 use godot::prelude::*;
 
+use spacetimedb_sdk::DbContext;
+
 #[derive(GodotClass)]
 #[class(base=Area2D)]
-pub struct CoinArea {
+pub struct CoinNode {
     game_manager: Option<Gd<GameManager>>,
 
     animation_player: Option<Gd<AnimationPlayer>>,
@@ -15,7 +17,7 @@ pub struct CoinArea {
 }
 
 #[godot_api]
-impl IArea2D for CoinArea {
+impl IArea2D for CoinNode {
     fn init(base: Base<Area2D>) -> Self {
         Self {
             game_manager: None,
@@ -43,37 +45,30 @@ impl IArea2D for CoinArea {
             godot_error!("Could not find AnimationPlayer node");
         }
 
-        let position = self.base().get_global_position();
-        let scene_id = 1; // TODO: Default scene ID - you might want to get this dynamically
-
-        {
-            let connection = GLOBAL_CONNECTION.lock().unwrap();
-            if connection.is_connected() {
-                if let Err(e) = connection.register_coin_at_position(position, scene_id) {
-                    godot_warn!("Failed to register coin position: {}", e);
-                }
-            }
-        }
-
-        self.check_if_collected_and_remove();
-
         let callable = self.base().callable("on_body_entered");
         self.base_mut().connect("body_entered", &callable);
     }
 }
 
 #[godot_api]
-impl CoinArea {
+impl CoinNode {
+    pub fn setup_multiplayer(connection: &DbConnection) {
+        connection
+            .subscription_builder()
+            .subscribe("SELECT * FROM coin");
+    }
+
     #[func]
     fn on_body_entered(&mut self, body: Gd<Node2D>) {
         let position = self.base().get_global_position();
 
         {
-            let connection = GLOBAL_CONNECTION.lock().unwrap();
-            if !connection.is_connected() {
-                return;
-            }
+            let Some(connection) = SpacetimeDBManager::get_read_connection() else {
+                godot_print!("No connection!");
 
+                return;
+            };
+            
             match connection.collect_coin_at_position(position) {
                 Ok(_) => {
                     godot_print!(
@@ -87,11 +82,6 @@ impl CoinArea {
                     return;
                 }
             }
-        }
-
-        let connection = GLOBAL_CONNECTION.lock().unwrap();
-        if !connection.is_connected() {
-            return;
         }
 
         let local_player = body.try_cast::<LocalPlayerNode>();
@@ -109,17 +99,8 @@ impl CoinArea {
         }
     }
 
-    fn check_if_collected_and_remove(&mut self) {
-        let position = self.base().get_global_position();
-
-        let connection = GLOBAL_CONNECTION.lock().unwrap();
-        if connection.is_coin_collected_at_position(position) {
-            godot_print!(
-                "Coin at ({}, {}) was already collected, removing from scene",
-                position.x,
-                position.y
-            );
-            self.base_mut().queue_free();
-        }
+    #[func]
+    fn remove(&mut self) {
+        self.base_mut().queue_free();
     }
 }

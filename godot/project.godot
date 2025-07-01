@@ -11,13 +11,18 @@ config_version=5
 [application]
 
 config/name="kik-pok"
-run/main_scene="uid://cim4ynxn2fawe"
+run/main_scene="uid://c4p63n2c5ia78"
 config/features=PackedStringArray("4.4", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
 
 Music="*res://scenes/audio/music.tscn"
+
+[display]
+
+window/size/viewport_width=1600
+window/size/viewport_height=920
 
 [global_group]
 

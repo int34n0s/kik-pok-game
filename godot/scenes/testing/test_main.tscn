@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://djbd7unb37usl"]
+[gd_scene load_steps=27 format=3 uid="uid://cxtfhvi4p1cit"]
 
 [ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/characters/local_player.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://23ginfucreyv" path="res://scenes/utils/game_manager.tscn" id="1_o6xl0"]
@@ -256,7 +256,7 @@ position = Vector2(-8, -3)
 [node name="Player" parent="MultiplayerManager" instance=ExtResource("1_o5qli")]
 position = Vector2(-15, -25)
 
-[node name="Camera2D" type="Camera2D" parent="MultiplayerManager/Player"]
+[node name="Camera2D2" type="Camera2D" parent="MultiplayerManager/Player"]
 zoom = Vector2(4, 4)
 limit_bottom = 100
 limit_smoothed = true

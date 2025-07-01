@@ -1,9 +1,11 @@
-use crate::elements::{coin, player, player_score, DbVector2, PlayerScore};
+use crate::elements::coin::coin;
+use crate::elements::character::player;
+use crate::elements::{player_score::*, DbVector2};
 
 use spacetimedb::{reducer, ReducerContext, Table};
 
 #[reducer]
-pub fn collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), String> {
+pub fn try_collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), String> {
     log::trace!(
         "Player {} is collecting a coin at position ({}, {})",
         ctx.sender,

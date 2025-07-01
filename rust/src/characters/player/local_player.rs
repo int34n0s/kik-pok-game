@@ -1,8 +1,12 @@
-use godot::prelude::*;
-
+use std::sync::{Arc, Mutex};
 use super::BasicPlayer;
-use crate::GLOBAL_CONNECTION;
+
+use crate::{register_player, DbConnection, DbPlayerState, DbVector2, RegistrationState, SpacetimeDBManager};
+
+use godot::prelude::*;
 use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, Input};
+
+use spacetimedb_sdk::DbContext;
 
 #[derive(GodotClass)]
 #[class(base=CharacterBody2D)]
@@ -40,6 +44,36 @@ impl ICharacterBody2D for LocalPlayerNode {
 
 #[godot_api]
 impl LocalPlayerNode {
+    pub fn setup_multiplayer(connection: &DbConnection, registration_state: Arc<Mutex<RegistrationState>>) {
+        connection
+            .subscription_builder()
+            .subscribe("SELECT * FROM player");
+        
+        let registration_state = registration_state.clone();
+        connection
+            .reducers
+            .on_register_player(move |ctx, _name, _scene_id| match &ctx.event.status {
+                spacetimedb_sdk::Status::Committed => {
+                    godot_print!("Player registration committed successfully");
+
+                    let mut state = registration_state.lock().unwrap();
+                    *state = RegistrationState::Registered;
+                }
+                spacetimedb_sdk::Status::Failed(e) => {
+                    godot_print!("Player registration failed: {}", e);
+
+                    let mut state = registration_state.lock().unwrap();
+                    *state = RegistrationState::RegistrationFailed(e.to_string());
+                }
+                spacetimedb_sdk::Status::OutOfEnergy => {
+                    godot_print!("Player registration failed: Out of energy");
+
+                    let mut state = registration_state.lock().unwrap();
+                    *state = RegistrationState::RegistrationFailed("Out of energy".to_string());
+                }
+            });
+    }
+    
     #[func]
     pub fn get_player_position(&self) -> Vector2 {
         self.base().get_global_position()
@@ -80,13 +114,19 @@ impl LocalPlayerNode {
     fn send_inputs(&self, direction: f32, jump_pressed: bool, is_on_floor: bool) {
         let updated_velocity = self.base().get_velocity();
         let is_jumping = jump_pressed || (!is_on_floor && updated_velocity.y < 0.0);
+        
+        let state = DbPlayerState {
+            position: DbVector2::from(self.base().get_position()),
+            direction: direction as i32,
+            is_jumping,
+        };
 
-        let connection = GLOBAL_CONNECTION.lock().unwrap();
-        if !connection.is_connected() {
+        let Some(connection) = SpacetimeDBManager::get_read_connection() else {
+            godot_print!("Could not get database connection!");
             return;
-        }
-
-        match connection.send_inputs(direction as i32, is_jumping, self.base().get_position()) {
+        };
+        
+        match connection.send_inputs(state) {
             Ok(_) => {}
             Err(e) => godot_print!("Failed to send inputs: {}", e),
         }

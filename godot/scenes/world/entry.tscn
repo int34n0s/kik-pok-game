@@ -1,0 +1,28 @@
+[gd_scene load_steps=5 format=3 uid="uid://b5mfr41bqhr1o"]
+
+[ext_resource type="PackedScene" uid="uid://23ginfucreyv" path="res://scenes/utils/game_manager.tscn" id="1_2tiqo"]
+[ext_resource type="PackedScene" uid="uid://djk3o7lb4is77" path="res://scenes/environment/world.tscn" id="2_eo0pq"]
+[ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/utils/killzone.tscn" id="4_7n243"]
+
+[sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_tbgi4"]
+
+[node name="Main" type="MultiplayerManager"]
+
+[node name="TileMapLayer" parent="." instance=ExtResource("2_eo0pq")]
+position = Vector2(-8, -3)
+
+[node name="GameManager" parent="." groups=["manager"] instance=ExtResource("1_2tiqo")]
+
+[node name="ScoreLabel" parent="GameManager" index="0"]
+offset_left = 508.0
+offset_top = -404.0
+offset_right = 592.0
+offset_bottom = -374.0
+
+[node name="Killzone" parent="." instance=ExtResource("4_7n243")]
+position = Vector2(-10, 79)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Killzone"]
+shape = SubResource("WorldBoundaryShape2D_tbgi4")
+
+[editable path="GameManager"]

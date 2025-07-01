@@ -590,9 +590,9 @@ checksum = "6b46b9ca4690308844c644e7c634d68792467260e051c8543e0c7871662b3ba7"
 
 [[package]]
 name = "godot"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a39ac85e71bb02a09badd538b76e11945bf7ee5e02c30d46e38e7d3dac33763"
+checksum = "8be80775e8e898b3eb778324edb8184abe69b8ce1f8c9ddefdb3ca3c29dbf807"
 dependencies = [
  "godot-core",
  "godot-macros",
@@ -600,24 +600,24 @@ dependencies = [
 
 [[package]]
 name = "godot-bindings"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "619afb7eda5a0f3e496d651b858ec7c03acf483a7cd36b7c4a7c0df96ae1a50e"
+checksum = "ffae5f2ac74e199b620c9423a63d07d1d256727ae10b8fd5f4dd1b7d0ad6e53a"
 dependencies = [
  "gdextension-api",
 ]
 
 [[package]]
 name = "godot-cell"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c198c3760f5f2edb852ebdbcc83f948fa1436d6deb2000bbdadb99fc6858bfd"
+checksum = "359a01b262bb181fddcfabc529da221ca5045b264a07546ed1976efd0feefc06"
 
 [[package]]
 name = "godot-codegen"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7673ba4ef6a69205dc93909c5c5fc15f3c9159e1829b1ff1e7c4a94ba31f93f3"
+checksum = "7df7b4edf35977ab5f448fd99087725307ac6e6b88c957a61b02ec556a0fedf8"
 dependencies = [
  "godot-bindings",
  "heck 0.5.0",
@@ -629,9 +629,9 @@ dependencies = [
 
 [[package]]
 name = "godot-core"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1124ea2c9753d593691d16864edb57552f9321333a286f802932e3d8a56d70f3"
+checksum = "21b55f9a4003ff887a8729820c0c8b4db84cb17d623e77a847d31fc69db1cf33"
 dependencies = [
  "glam",
  "godot-bindings",
@@ -642,9 +642,9 @@ dependencies = [
 
 [[package]]
 name = "godot-ffi"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec84cddb0e58a8ad3639e88ba1f06a8350ddff4cc368a7d78c1cff1b46e7ff0a"
+checksum = "d5b1d3fffcbd583091476f1ae0c1482e5413f2d97ce30829198bae6cd4db468e"
 dependencies = [
  "godot-bindings",
  "godot-codegen",
@@ -654,9 +654,9 @@ dependencies = [
 
 [[package]]
 name = "godot-macros"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8a41150c0d205c7b671402a3f06f1b89910d90c513a0442fa4b2b8ea6665969"
+checksum = "d0c19bc6f536e07249efc37cdda01ccd72aa0a6c05cd135f540c5cf5abbdaae1"
 dependencies = [
  "godot-bindings",
  "libc",
@@ -1168,9 +1168,8 @@ version = "0.1.0"
 dependencies = [
  "godot",
  "lazy_static",
- "rand",
  "spacetimedb-sdk",
- "uuid",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -1388,9 +1387,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-bindings-macro"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c60767c5e80fb1d0753834b894c9c3f9eb0ddba351ef4681fe714ff1024e727"
+checksum = "135f9af56c58a5ed97a7d1b9bee60104c866a46e705ab79f57e5f918ad276bdc"
 dependencies = [
  "heck 0.4.1",
  "humantime",
@@ -1402,9 +1401,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-client-api-messages"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4719dcabb2a4c20be50c52a94ab8db9efa04900dcda20f89734c17f6cc1d30b3"
+checksum = "a113aa7b243b7461904301e37f86dfa9e4ea803e4fb0b11f1eac057f052d0cb3"
 dependencies = [
  "brotli",
  "bytes",
@@ -1426,9 +1425,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-data-structures"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f857c5f4ea6c3d13f9d78d3aaa36fd31d1879331fdd15d3f1de0ecbc4e6e1968"
+checksum = "4f61fac3c0d82a0558824abfd6bcb5dc5e6fac934e002cac55e2e224a94b59c5"
 dependencies = [
  "ahash",
  "hashbrown 0.15.3",
@@ -1439,9 +1438,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-lib"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69e1c1bac730f946c8ac07d9e71aee934eb1a82c02dcb6757a3763cdab808d1f"
+checksum = "4b4416b57d422452d1e06273b2ff5ceedb90020f74a06d88f39ce1c979b5be7e"
 dependencies = [
  "anyhow",
  "bitflags",
@@ -1462,9 +1461,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-metrics"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68f8d70c3f417131b9d9fc0e5c929a374d8e98e1039161b140f4153174d46daf"
+checksum = "6b10e593a9b44d660e1d1dacde1ac2977bf08b51e970ad11043689a2d8c3bf46"
 dependencies = [
  "arrayvec",
  "itertools",
@@ -1474,9 +1473,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-primitives"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f149b0933112064b4d3424bfae9b6dc694d4bc2e3ca80b6974a0628e81b61c70"
+checksum = "c5a3d9c671b8d54371dd40f146c82cc8ae7039533ce034cbcc7dd618dfe35fc7"
 dependencies = [
  "bitflags",
  "either",
@@ -1486,9 +1485,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-sats"
-version = "1.1.2"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0e4739251061b529df194318f78c85482dff282d41175eeefe1a1f9c5ce556f"
+checksum = "b0dd6d73cae3213342a9144266e486e27a23b317b9601ca5cb4735f8407bcdd1"
 dependencies = [
  "anyhow",
  "arrayvec",
@@ -1515,9 +1514,9 @@ dependencies = [
 
 [[package]]
 name = "spacetimedb-sdk"
-version = "1.1.1"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38a7ce9dbd42c366c6cec1a9361ab0eaf3bb5c9c1b634fc4f91820a3bf689245"
+checksum = "4438023af69b8b95e2e12779456ba4f7e507d3027bd4df3b156b6d5bab6903f0"
 dependencies = [
  "anymap",
  "base64 0.21.7",
@@ -1752,17 +1751,6 @@ name = "utf-8"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
-
-[[package]]
-name = "uuid"
-version = "1.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cf4199d1e5d15ddd86a694e4d0dffa9c323ce759fea589f00fef9d81cc1931d"
-dependencies = [
- "getrandom",
- "js-sys",
- "wasm-bindgen",
-]
 
 [[package]]
 name = "vcpkg"

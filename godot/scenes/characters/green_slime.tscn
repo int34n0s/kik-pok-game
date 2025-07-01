@@ -1,6 +1,5 @@
-[gd_scene load_steps=10 format=3 uid="uid://ynngt8156yje"]
+[gd_scene load_steps=9 format=3 uid="uid://ynngt8156yje"]
 
-[ext_resource type="Script" uid="uid://cc7odj7ge88s0" path="res://scripts/characters/green_slime.gd" id="1_0pvn7"]
 [ext_resource type="Texture2D" uid="uid://brs4skynvuw0" path="res://assets/sprites/slime_green.png" id="1_8ap4f"]
 [ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/utils/killzone.tscn" id="2_yvjy8"]
 
@@ -43,8 +42,7 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8s534"]
 size = Vector2(10, 12)
 
-[node name="Green Slime" type="Node2D"]
-script = ExtResource("1_0pvn7")
+[node name="Green Slime" type="GreenSlimeNode"]
 
 [node name="AnimatedSprite" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_vweeu")

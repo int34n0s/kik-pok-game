@@ -6,32 +6,39 @@ use spacetimedb_sdk::__codegen::{self as __sdk, __lib, __sats, __ws};
 
 pub mod coin_table;
 pub mod coin_type;
-pub mod collect_coin_reducer;
 pub mod db_player_state_type;
 pub mod db_player_type;
 pub mod db_vector_2_type;
+pub mod green_slime_table;
+pub mod green_slime_type;
 pub mod identity_connected_reducer;
 pub mod identity_disconnected_reducer;
+pub mod platform_table;
+pub mod platform_type;
 pub mod player_score_table;
 pub mod player_score_type;
 pub mod player_table;
 pub mod register_player_reducer;
 pub mod send_player_state_reducer;
+pub mod try_collect_coin_reducer;
 pub mod world_scene_table;
 pub mod world_scene_type;
 
 pub use coin_table::*;
 pub use coin_type::Coin;
-pub use collect_coin_reducer::{collect_coin, set_flags_for_collect_coin, CollectCoinCallbackId};
 pub use db_player_state_type::DbPlayerState;
 pub use db_player_type::DbPlayer;
 pub use db_vector_2_type::DbVector2;
+pub use green_slime_table::*;
+pub use green_slime_type::GreenSlime;
 pub use identity_connected_reducer::{
     identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId,
 };
 pub use identity_disconnected_reducer::{
     identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
 };
+pub use platform_table::*;
+pub use platform_type::Platform;
 pub use player_score_table::*;
 pub use player_score_type::PlayerScore;
 pub use player_table::*;
@@ -40,6 +47,9 @@ pub use register_player_reducer::{
 };
 pub use send_player_state_reducer::{
     send_player_state, set_flags_for_send_player_state, SendPlayerStateCallbackId,
+};
+pub use try_collect_coin_reducer::{
+    set_flags_for_try_collect_coin, try_collect_coin, TryCollectCoinCallbackId,
 };
 pub use world_scene_table::*;
 pub use world_scene_type::WorldScene;
@@ -52,11 +62,11 @@ pub use world_scene_type::WorldScene;
 /// to indicate which reducer caused the event.
 
 pub enum Reducer {
-    CollectCoin { position: DbVector2 },
     IdentityConnected,
     IdentityDisconnected,
     RegisterPlayer { name: String, scene_id: u32 },
     SendPlayerState { state: DbPlayerState },
+    TryCollectCoin { position: DbVector2 },
 }
 
 impl __sdk::InModule for Reducer {
@@ -66,11 +76,11 @@ impl __sdk::InModule for Reducer {
 impl __sdk::Reducer for Reducer {
     fn reducer_name(&self) -> &'static str {
         match self {
-            Reducer::CollectCoin { .. } => "collect_coin",
             Reducer::IdentityConnected => "identity_connected",
             Reducer::IdentityDisconnected => "identity_disconnected",
             Reducer::RegisterPlayer { .. } => "register_player",
             Reducer::SendPlayerState { .. } => "send_player_state",
+            Reducer::TryCollectCoin { .. } => "try_collect_coin",
         }
     }
 }
@@ -78,13 +88,6 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
     type Error = __sdk::Error;
     fn try_from(value: __ws::ReducerCallInfo<__ws::BsatnFormat>) -> __sdk::Result<Self> {
         match &value.reducer_name[..] {
-            "collect_coin" => Ok(
-                __sdk::parse_reducer_args::<collect_coin_reducer::CollectCoinArgs>(
-                    "collect_coin",
-                    &value.args,
-                )?
-                .into(),
-            ),
             "identity_connected" => Ok(__sdk::parse_reducer_args::<
                 identity_connected_reducer::IdentityConnectedArgs,
             >("identity_connected", &value.args)?
@@ -101,6 +104,10 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
                 send_player_state_reducer::SendPlayerStateArgs,
             >("send_player_state", &value.args)?
             .into()),
+            "try_collect_coin" => Ok(__sdk::parse_reducer_args::<
+                try_collect_coin_reducer::TryCollectCoinArgs,
+            >("try_collect_coin", &value.args)?
+            .into()),
             unknown => {
                 Err(
                     __sdk::InternalError::unknown_name("reducer", unknown, "ReducerCallInfo")
@@ -116,6 +123,8 @@ impl TryFrom<__ws::ReducerCallInfo<__ws::BsatnFormat>> for Reducer {
 #[doc(hidden)]
 pub struct DbUpdate {
     coin: __sdk::TableUpdate<Coin>,
+    green_slime: __sdk::TableUpdate<GreenSlime>,
+    platform: __sdk::TableUpdate<Platform>,
     player: __sdk::TableUpdate<DbPlayer>,
     player_score: __sdk::TableUpdate<PlayerScore>,
     world_scene: __sdk::TableUpdate<WorldScene>,
@@ -128,6 +137,12 @@ impl TryFrom<__ws::DatabaseUpdate<__ws::BsatnFormat>> for DbUpdate {
         for table_update in raw.tables {
             match &table_update.table_name[..] {
                 "coin" => db_update.coin = coin_table::parse_table_update(table_update)?,
+                "green_slime" => {
+                    db_update.green_slime = green_slime_table::parse_table_update(table_update)?
+                }
+                "platform" => {
+                    db_update.platform = platform_table::parse_table_update(table_update)?
+                }
                 "player" => db_update.player = player_table::parse_table_update(table_update)?,
                 "player_score" => {
                     db_update.player_score = player_score_table::parse_table_update(table_update)?
@@ -164,6 +179,12 @@ impl __sdk::DbUpdate for DbUpdate {
         diff.coin = cache
             .apply_diff_to_table::<Coin>("coin", &self.coin)
             .with_updates_by_pk(|row| &row.coin_id);
+        diff.green_slime = cache
+            .apply_diff_to_table::<GreenSlime>("green_slime", &self.green_slime)
+            .with_updates_by_pk(|row| &row.green_slime_id);
+        diff.platform = cache
+            .apply_diff_to_table::<Platform>("platform", &self.platform)
+            .with_updates_by_pk(|row| &row.platform_id);
         diff.player = cache
             .apply_diff_to_table::<DbPlayer>("player", &self.player)
             .with_updates_by_pk(|row| &row.identity);
@@ -183,6 +204,8 @@ impl __sdk::DbUpdate for DbUpdate {
 #[doc(hidden)]
 pub struct AppliedDiff<'r> {
     coin: __sdk::TableAppliedDiff<'r, Coin>,
+    green_slime: __sdk::TableAppliedDiff<'r, GreenSlime>,
+    platform: __sdk::TableAppliedDiff<'r, Platform>,
     player: __sdk::TableAppliedDiff<'r, DbPlayer>,
     player_score: __sdk::TableAppliedDiff<'r, PlayerScore>,
     world_scene: __sdk::TableAppliedDiff<'r, WorldScene>,
@@ -199,6 +222,8 @@ impl<'r> __sdk::AppliedDiff<'r> for AppliedDiff<'r> {
         callbacks: &mut __sdk::DbCallbacks<RemoteModule>,
     ) {
         callbacks.invoke_table_row_callbacks::<Coin>("coin", &self.coin, event);
+        callbacks.invoke_table_row_callbacks::<GreenSlime>("green_slime", &self.green_slime, event);
+        callbacks.invoke_table_row_callbacks::<Platform>("platform", &self.platform, event);
         callbacks.invoke_table_row_callbacks::<DbPlayer>("player", &self.player, event);
         callbacks.invoke_table_row_callbacks::<PlayerScore>(
             "player_score",
@@ -782,6 +807,8 @@ impl __sdk::SpacetimeModule for RemoteModule {
 
     fn register_tables(client_cache: &mut __sdk::ClientCache<Self>) {
         coin_table::register_table(client_cache);
+        green_slime_table::register_table(client_cache);
+        platform_table::register_table(client_cache);
         player_table::register_table(client_cache);
         player_score_table::register_table(client_cache);
         world_scene_table::register_table(client_cache);

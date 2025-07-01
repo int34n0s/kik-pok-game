@@ -1,4 +1,4 @@
-use crate::elements::player;
+use crate::elements::character::player;
 use crate::world_state::world_scene_config::WorldSceneConfig;
 
 use spacetimedb::{reducer, ReducerContext, Table};
@@ -32,6 +32,8 @@ pub fn identity_disconnected(ctx: &ReducerContext) -> Result<(), String> {
         "The identity_disconnected reducer was called by {}.",
         ctx.sender
     );
+    
+    ctx.db.player().identity().delete(ctx.sender);
 
     Ok(())
 }

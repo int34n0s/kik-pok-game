@@ -1,4 +1,6 @@
-use crate::elements::{player, world_scene, DBPlayerState, DbPlayer};
+use crate::elements::scene::world_scene;
+use crate::elements::character::{player, DBPlayerState, DbPlayer};
+
 use spacetimedb::{reducer, ReducerContext, Table};
 
 #[reducer]

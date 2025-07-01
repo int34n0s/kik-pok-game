@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4p63n2c5ia78"]
+
+[ext_resource type="Script" uid="uid://dkeyostttfj4t" path="res://scenes/testing/test_loader.gd" id="1_ulbxp"]
+
+[node name="TestLoader" type="Node2D"]
+script = ExtResource("1_ulbxp")
