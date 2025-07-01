@@ -196,7 +196,7 @@ _data = {
 &"pickup": SubResource("Animation_3am43")
 }
 
-[node name="Coin" type="CoinArea"]
+[node name="Coin" type="CoinNode"]
 collision_mask = 2
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -214,5 +214,3 @@ bus = &"SFX"
 libraries = {
 &"": SubResource("AnimationLibrary_2h0wt")
 }
-
-[connection signal="body_entered" from="." to="." method="_on_body_entered"]

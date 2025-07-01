@@ -1,7 +1,7 @@
-use crate::GLOBAL_CONNECTION;
+use crate::SpacetimeDBManager;
 
-use godot::classes::{Area2D, CollisionShape2D, Engine, IArea2D, Timer};
 use godot::prelude::*;
+use godot::classes::{Area2D, CollisionShape2D, IArea2D, Timer};
 
 #[derive(GodotClass)]
 #[class(base=Area2D)]
@@ -37,8 +37,7 @@ impl IArea2D for KillZoneArea {
 #[godot_api]
 impl KillZoneArea {
     fn connect_signals(&mut self) {
-        let callback = self.base().callable("on_body_entered");
-        self.base_mut().connect("body_entered", &callback);
+        self.connect_body_entered_callback();
 
         let callback = self.base().callable("on_timer_timeout");
         if let Some(timer) = &mut self.timer {
@@ -48,22 +47,58 @@ impl KillZoneArea {
 
     #[func]
     fn on_body_entered(&mut self, body: Gd<Node2D>) {
-        let callable = self.base().callable("on_body_entered");
-        self.base_mut().disconnect("body_entered", &callable);
+        self.delete_body_entered_callback();
 
-        let mut engine = Engine::singleton();
-        engine.set_time_scale(0.35);
-
-        if let Some(mut collision_shape) =
-            body.try_get_node_as::<CollisionShape2D>("CollisionShape2D")
-        {
-            collision_shape.set_deferred("disabled", &true.to_variant());
-        } else {
-            godot_error!("Could not find CollisionShape2D on entered body");
-        }
+        Self::set_deferred_collision_shape(&body, true);
 
         self.entered_body = Some(body);
 
+        self.start_timer();
+    }
+
+    #[func]
+    fn on_timer_timeout(&mut self) {
+        let Some(entered_body) = &mut self.entered_body else {
+            self.connect_body_entered_callback();
+
+            return;
+        };
+        
+        Self::set_deferred_collision_shape(entered_body, false);
+
+        let Some(connection) = SpacetimeDBManager::get_read_connection() else {
+            godot_error!("Could not get database connection!");
+            return;
+        };
+        
+        match connection.get_spawn_point() {
+            Ok(Some(spawn_point)) => {
+                entered_body.set_position(spawn_point);
+            }
+            Ok(None) => {
+                godot_error!("Could not get spawn_point!");
+            }
+            Err(e) => {
+                godot_error!("Could not get spawn_point: {:?}", e);
+            }
+        }
+
+        self.entered_body = None;
+
+        self.start_timer();
+    }
+    
+    fn set_deferred_collision_shape(body: &Gd<Node2D>, state: bool) {
+        if let Some(mut collision_shape) =
+            body.try_get_node_as::<CollisionShape2D>("CollisionShape2D")
+        {
+            collision_shape.set_deferred("disabled", &state.to_variant());
+        } else {
+            godot_error!("Could not find CollisionShape2D on entered body");
+        }
+    }
+
+    fn start_timer(&mut self) {
         if let Some(timer) = &mut self.timer {
             timer.start();
         } else {
@@ -71,43 +106,13 @@ impl KillZoneArea {
         }
     }
 
-    #[func]
-    fn on_timer_timeout(&mut self) {
-        let Some(entered_body) = &mut self.entered_body else {
-            let callback = self.base().callable("on_body_entered");
-            self.base_mut().connect("body_entered", &callback);
+    fn connect_body_entered_callback(&mut self) {
+        let callback = self.base().callable("on_body_entered");
+        self.base_mut().connect("body_entered", &callback);
+    }
 
-            return;
-        };
-
-        let mut engine = Engine::singleton();
-        engine.set_time_scale(1.0);
-
-        let connection = GLOBAL_CONNECTION.lock().unwrap();
-        if !connection.is_connected() {
-            return;
-        }
-
-        if let Some(mut collision_shape) =
-            entered_body.try_get_node_as::<CollisionShape2D>("CollisionShape2D")
-        {
-            collision_shape.set_deferred("disabled", &false.to_variant());
-        } else {
-            godot_error!("Could not find CollisionShape2D on entered body");
-        }
-
-        if let Some(spawn_point) = connection.get_spawn_point() {
-            entered_body.set_position(spawn_point);
-        } else {
-            godot_error!("Could not get spawn_point!");
-        }
-
-        self.entered_body = None;
-
-        if let Some(timer) = &mut self.timer {
-            timer.start();
-        } else {
-            godot_error!("Timer not available to start");
-        }
+    fn delete_body_entered_callback(&mut self) {
+        let callable = self.base().callable("on_body_entered");
+        self.base_mut().disconnect("body_entered", &callable);
     }
 }

@@ -1,4 +1,5 @@
 use crate::*;
+use crate::multiplayer::bootstrap::WorldBootstrap;
 
 use godot::classes::{Engine, INode, Label, Node, PackedScene, ResourceLoader};
 use godot::prelude::*;
@@ -6,15 +7,13 @@ use godot::prelude::*;
 use spacetimedb_sdk::Identity;
 use std::collections::HashMap;
 
+pub const FRAME_RATE: f32 = 60.0;
+
+pub const PLAYER_SCENE_PATH: &str = "res://scenes/characters/remote_player.tscn";
+
 #[derive(GodotClass)]
 #[class(base=Node)]
 pub struct MultiplayerManager {
-    #[allow(dead_code)]
-    position_update_timer: f32,
-    #[allow(dead_code)]
-    position_update_interval: f32,
-
-    /// player_id -> Player instance
     remote_players: HashMap<Identity, Gd<RemotePlayerNode>>,
 
     #[base]
@@ -25,8 +24,6 @@ pub struct MultiplayerManager {
 impl INode for MultiplayerManager {
     fn init(base: Base<Node>) -> Self {
         Self {
-            position_update_timer: 0.0,
-            position_update_interval: 1.0 / 60.0, // 60 FPS position updates
             remote_players: HashMap::new(),
             base,
         }
@@ -37,8 +34,32 @@ impl INode for MultiplayerManager {
     }
 
     fn ready(&mut self) {
-        let mut engine = Engine::singleton();
-        engine.set_max_fps(60);
+        Engine::singleton().set_max_fps(FRAME_RATE as i32);
+        
+        let bootstrap = WorldBootstrap::new();
+        
+        let Some(db_manager) = SpacetimeDBManager::get_read_connection() else {
+            godot_print!("Failed to get database connection");
+            return;
+        };
+        
+        let Ok(connection) = db_manager.get_connection() else {
+            godot_print!("Failed to get connection");
+
+            return;
+        };
+
+        let Some(player_name) = db_manager.login_module.get_player_name() else {
+            godot_print!("Failed to get player name");
+
+            return;
+        };
+        
+        let Err(result) = bootstrap.start(&mut self.base_mut(), connection, player_name) else {
+          return;  
+        };
+        
+        godot_print!("Failed to start bootstrap: {:?}", result);
     }
 }
 
@@ -46,7 +67,11 @@ impl INode for MultiplayerManager {
 impl MultiplayerManager {
     fn handle_multiplayer_updates(&mut self) {
         {
-            let db_manager = GLOBAL_CONNECTION.lock().unwrap();
+            let Some(mut db_manager) = SpacetimeDBManager::get_write_connection() else {
+                godot_print!("Failed to get database connection for tick");
+                return;
+            };
+            
             if let Err(e) = db_manager.tick() {
                 godot_print!("Database tick error: {}", e);
             }
@@ -56,23 +81,24 @@ impl MultiplayerManager {
     }
 
     fn sync_remote_players(&mut self) {
-        let db_manager = GLOBAL_CONNECTION.lock().unwrap();
+        let Some(db_manager) = SpacetimeDBManager::get_read_connection() else {
+            return;
+        };
 
-        let players = db_manager.get_other_players();
-
-        // Track active remote players
+        let Ok(players) = db_manager.get_other_players() else {
+            return;
+        };
+        
         let mut current_remote_players = std::collections::HashSet::new();
-
-        // Process all entities (except our own)
         for player in players {
             current_remote_players.insert(player.identity);
 
             if let Some(remote_player) = self.remote_players.get_mut(&player.identity) {
-                let position = Vector2::new(player.position.x, player.position.y);
+                let position = Vector2::new(player.state.position.x, player.state.position.y);
 
                 remote_player.bind_mut().set_player_position(
-                    player.direction,
-                    player.is_jumping,
+                    player.state.direction,
+                    player.state.is_jumping,
                     position,
                 );
 
@@ -81,8 +107,7 @@ impl MultiplayerManager {
 
             self.spawn_remote_player(&player);
         }
-
-        // Remove remote players who left
+        
         let players_to_remove: Vec<Identity> = self
             .remote_players
             .keys()
@@ -98,7 +123,7 @@ impl MultiplayerManager {
     fn spawn_remote_player(&mut self, player: &DbPlayer) {
         let player_id = player.identity;
         let name = &player.name;
-        let position = Vector2::new(player.position.x, player.position.y);
+        let position = Vector2::new(player.state.position.x, player.state.position.y);
 
         godot_print!(
             "Spawning remote player {} ({}) at ({}, {})",
@@ -107,13 +132,10 @@ impl MultiplayerManager {
             position.x,
             position.y
         );
-
-        // Load the player scene
-        let player_scene_path = "res://scenes/characters/remote_player.tscn";
+        
         let mut resource_loader = ResourceLoader::singleton();
-
-        let Some(packed_scene) = resource_loader.load(player_scene_path) else {
-            godot_print!("Failed to load resource at {}", player_scene_path);
+        let Some(packed_scene) = resource_loader.load(PLAYER_SCENE_PATH) else {
+            godot_print!("Failed to load resource at {}", PLAYER_SCENE_PATH);
             return;
         };
 
@@ -131,16 +153,14 @@ impl MultiplayerManager {
             godot_print!("Failed to cast instance to Player");
             return;
         };
-
-        // Configure the remote player
+        
         remote_player.set_position(position);
-        remote_player.set_name(&GString::from(name));
+        remote_player.set_name(&GString::from(player_id.to_string()));
 
         if let Some(mut player_name) = remote_player.try_get_node_as::<Label>("PlayerName") {
             player_name.set_text(&GString::from(name));
         }
-
-        // Add to scene
+        
         self.base_mut().add_child(&remote_player);
         self.remote_players.insert(player_id, remote_player);
 
