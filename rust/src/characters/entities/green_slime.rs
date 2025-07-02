@@ -1,7 +1,7 @@
+use crate::DbConnection;
 use godot::classes::{AnimatedSprite2D, INode2D, RayCast2D};
 use godot::prelude::*;
 use spacetimedb_sdk::DbContext;
-use crate::{DbConnection};
 
 const SPEED: f32 = 60.0;
 
@@ -12,7 +12,7 @@ pub struct GreenSlimeNode {
 
     ray_cast_right: Option<Gd<RayCast2D>>,
     ray_cast_left: Option<Gd<RayCast2D>>,
-    
+
     animated_sprite: Option<Gd<AnimatedSprite2D>>,
 
     #[base]
@@ -62,7 +62,9 @@ impl INode2D for GreenSlimeNode {
     fn ready(&mut self) {
         self.ray_cast_right = self.base().try_get_node_as::<RayCast2D>("RayCastRight");
         self.ray_cast_left = self.base().try_get_node_as::<RayCast2D>("RayCastLeft");
-        self.animated_sprite = self.base().try_get_node_as::<AnimatedSprite2D>("AnimatedSprite");
+        self.animated_sprite = self
+            .base()
+            .try_get_node_as::<AnimatedSprite2D>("AnimatedSprite");
 
         if self.ray_cast_right.is_none() {
             godot_error!("Could not find RayCastRight node");

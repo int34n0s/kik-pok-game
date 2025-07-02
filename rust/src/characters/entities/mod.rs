@@ -1,7 +1,7 @@
 mod coin;
-mod platform;
 mod green_slime;
+mod platform;
 
 pub use coin::*;
-pub use platform::*;
 pub use green_slime::*;
+pub use platform::*;

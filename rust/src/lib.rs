@@ -1,8 +1,8 @@
 mod characters;
+mod errors;
 mod multiplayer;
 mod ui;
 mod utils;
-mod errors;
 
 pub use errors::RustLibError;
 

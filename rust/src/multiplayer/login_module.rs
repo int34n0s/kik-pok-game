@@ -32,7 +32,7 @@ impl LoginModule {
     pub fn set_scene_id(&mut self, scene_id: u32) {
         self.scene_id = Some(scene_id);
     }
-    
+
     pub fn get_state(&self) -> &ConnectionState {
         &self.state
     }
@@ -48,12 +48,14 @@ impl LoginModule {
     pub fn get_player_name(&self) -> Option<&str> {
         self.player_name.as_deref()
     }
-    
+
     pub fn require_logged_in(&self) -> Result<(), RustLibError> {
         if self.state == ConnectionState::LoggedIn {
             return Ok(());
         }
-        
-        Err(RustLibError::WrongConnectionState("Unexpected function call on non-logged in state".to_string()))
+
+        Err(RustLibError::WrongConnectionState(
+            "Unexpected function call on non-logged in state".to_string(),
+        ))
     }
 }

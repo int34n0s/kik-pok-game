@@ -1,7 +1,11 @@
-use crate::{CoinNode, CoinTableAccess, DbConnection, GreenSlimeNode, GreenSlimeTableAccess, LocalPlayerNode, MultiplayerManager, PlatformNode, PlatformTableAccess, RustLibError, WorldSceneTableAccess};
+use crate::{
+    CoinNode, CoinTableAccess, DbConnection, GreenSlimeNode, GreenSlimeTableAccess,
+    LocalPlayerNode, MultiplayerManager, PlatformNode, PlatformTableAccess, RustLibError,
+    WorldSceneTableAccess,
+};
 
-use godot::{prelude::*, obj::BaseMut};
 use godot::classes::ResourceLoader;
+use godot::{obj::BaseMut, prelude::*};
 use spacetimedb_sdk::{DbContext, Table};
 
 const LOCAL_PLAYER_SCENE_PATH: &str = "res://scenes/characters/local_player.tscn";
@@ -10,6 +14,12 @@ const PLATFORM_SCENE_PATH: &str = "res://scenes/environment/platform.tscn";
 const ENEMY_SCENE_PATH: &str = "res://scenes/characters/green_slime.tscn";
 
 pub struct WorldBootstrap {}
+
+impl Default for WorldBootstrap {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl WorldBootstrap {
     pub fn new() -> WorldBootstrap {
@@ -32,11 +42,22 @@ impl WorldBootstrap {
         Ok(())
     }
 
-    fn bootstrap_player(&self, multiplayer_base: &mut BaseMut<MultiplayerManager>, connection: &DbConnection, _player_name: &str) {
+    fn bootstrap_player(
+        &self,
+        multiplayer_base: &mut BaseMut<MultiplayerManager>,
+        connection: &DbConnection,
+        _player_name: &str,
+    ) {
         let player_id = connection.identity();
-        
+
         // TODO: make it flexible
-        let spawn_position = connection.db.world_scene().iter().find(|x| { x.scene_id == 1 }).unwrap().spawn_point;
+        let spawn_position = connection
+            .db
+            .world_scene()
+            .iter()
+            .find(|x| x.scene_id == 1)
+            .unwrap()
+            .spawn_point;
 
         let mut resource_loader = ResourceLoader::singleton();
         let Some(packed_scene) = resource_loader.load(LOCAL_PLAYER_SCENE_PATH) else {
@@ -65,8 +86,17 @@ impl WorldBootstrap {
         multiplayer_base.add_child(&local_player);
     }
 
-    fn bootstrap_coins(&self, multiplayer_base: &mut BaseMut<MultiplayerManager>, connection: &DbConnection) {
-        let coins = connection.db.coin().iter().filter(|x| x.scene_id == 1 && !x.is_collected).collect::<Vec<_>>();
+    fn bootstrap_coins(
+        &self,
+        multiplayer_base: &mut BaseMut<MultiplayerManager>,
+        connection: &DbConnection,
+    ) {
+        let coins = connection
+            .db
+            .coin()
+            .iter()
+            .filter(|x| x.scene_id == 1 && !x.is_collected)
+            .collect::<Vec<_>>();
 
         for coin in coins {
             let mut resource_loader = ResourceLoader::singleton();
@@ -96,9 +126,18 @@ impl WorldBootstrap {
             multiplayer_base.add_child(&coin_node);
         }
     }
-    
-    fn bootstrap_platforms(&self, multiplayer_base: &mut BaseMut<MultiplayerManager>, connection: &DbConnection) {
-        let platforms = connection.db.platform().iter().filter(|x| x.scene_id == 1).collect::<Vec<_>>();
+
+    fn bootstrap_platforms(
+        &self,
+        multiplayer_base: &mut BaseMut<MultiplayerManager>,
+        connection: &DbConnection,
+    ) {
+        let platforms = connection
+            .db
+            .platform()
+            .iter()
+            .filter(|x| x.scene_id == 1)
+            .collect::<Vec<_>>();
 
         for platform in platforms {
             let mut resource_loader = ResourceLoader::singleton();
@@ -106,31 +145,40 @@ impl WorldBootstrap {
                 godot_print!("Failed to load resource at {}", PLATFORM_SCENE_PATH);
                 continue;
             };
-        
+
             let Ok(scene) = packed_scene.try_cast::<PackedScene>() else {
                 godot_print!("Failed to cast resource to PackedScene");
                 continue;
             };
-        
+
             let Some(instance) = scene.instantiate() else {
                 godot_print!("Failed to instantiate scene");
                 continue;
             };
-        
+
             let Ok(mut platform_node) = instance.try_cast::<PlatformNode>() else {
                 godot_print!("Failed to cast instance to Platform");
                 continue;
             };
-        
+
             platform_node.set_position(platform.position.into());
             platform_node.set_name(&GString::from(platform.platform_id.to_string()));
-        
+
             multiplayer_base.add_child(&platform_node);
         }
     }
-    
-    fn bootstrap_enemies(&self, multiplayer_base: &mut BaseMut<MultiplayerManager>, connection: &DbConnection) {
-        let enemies = connection.db.green_slime().iter().filter(|x| x.scene_id == 1).collect::<Vec<_>>();
+
+    fn bootstrap_enemies(
+        &self,
+        multiplayer_base: &mut BaseMut<MultiplayerManager>,
+        connection: &DbConnection,
+    ) {
+        let enemies = connection
+            .db
+            .green_slime()
+            .iter()
+            .filter(|x| x.scene_id == 1)
+            .collect::<Vec<_>>();
 
         for enemy in enemies {
             let mut resource_loader = ResourceLoader::singleton();
@@ -143,12 +191,12 @@ impl WorldBootstrap {
                 godot_print!("Failed to cast resource to PackedScene");
                 continue;
             };
-            
+
             let Some(instance) = scene.instantiate() else {
                 godot_print!("Failed to instantiate scene");
                 continue;
             };
-            
+
             let Ok(mut enemy_node) = instance.try_cast::<GreenSlimeNode>() else {
                 godot_print!("Failed to cast instance to Enemy");
                 continue;

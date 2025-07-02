@@ -2,7 +2,7 @@ use crate::{DbConnection, ErrorContext, RustLibError};
 
 use godot::global::godot_print;
 
-use spacetimedb_sdk::{credentials, Error};
+use spacetimedb_sdk::{Error, credentials};
 
 use std::hash::{DefaultHasher, Hash, Hasher};
 
@@ -21,9 +21,7 @@ pub struct ConnectionModule {
 
 impl ConnectionModule {
     pub fn new() -> Self {
-        Self {
-            connection: None,
-        }
+        Self { connection: None }
     }
 
     pub fn connect(&mut self, username: &str) -> Result<(), RustLibError> {
@@ -34,28 +32,41 @@ impl ConnectionModule {
         match self.connect_to_db_with_creds(jwt, Self::get_creds_store(username)) {
             Ok(connection) => {
                 self.connection = Some(connection);
-                
+
                 Ok(())
             }
             Err(e) => {
                 godot_print!("Connection failed (retry): {:?}", e);
 
-                self.connection = Some(self.connect_to_db_with_creds(None, Self::get_creds_store(username))?);
+                self.connection =
+                    Some(self.connect_to_db_with_creds(None, Self::get_creds_store(username))?);
 
                 Ok(())
-            },
+            }
         }
     }
 
     pub fn get_connection(&self) -> Result<&DbConnection, RustLibError> {
-        self.connection.as_ref().ok_or(RustLibError::WrongConnectionState("No connection established.".to_string()))
+        self.connection
+            .as_ref()
+            .ok_or(RustLibError::WrongConnectionState(
+                "No connection established.".to_string(),
+            ))
     }
 
-    fn connect_to_db_with_creds(&self, jwt: Option<String>, creds_store: credentials::File) -> Result<DbConnection, RustLibError> {
+    fn connect_to_db_with_creds(
+        &self,
+        jwt: Option<String>,
+        creds_store: credentials::File,
+    ) -> Result<DbConnection, RustLibError> {
         DbConnection::builder()
             .on_connect(move |_ctx, identity, token| {
                 if let Err(e) = creds_store.save(token) {
-                    godot_print!("Failed to save credentials: {:?}, for identity: {:?}", e, identity);
+                    godot_print!(
+                        "Failed to save credentials: {:?}, for identity: {:?}",
+                        e,
+                        identity
+                    );
                 }
             })
             .on_connect_error(Self::on_connect_error)
@@ -66,11 +77,11 @@ impl ConnectionModule {
             .build()
             .map_err(|e| RustLibError::SpacetimeSDK { source: e })
     }
-    
+
     fn on_connect_error(_ctx: &ErrorContext, err: Error) {
         godot_print!("Connection error: {:?}", err);
     }
-    
+
     fn on_disconnected(_ctx: &ErrorContext, err: Option<Error>) {
         if let Some(err) = err {
             godot_print!("Disconnected: {}", err);
@@ -84,8 +95,8 @@ impl ConnectionModule {
         username.hash(&mut hasher);
         hasher.finish().to_string()
     }
-    
+
     fn get_creds_store(username: &str) -> credentials::File {
-        credentials::File::new(&Self::hash_username(username))
+        credentials::File::new(Self::hash_username(username))
     }
 }

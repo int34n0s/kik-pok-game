@@ -2,15 +2,15 @@ use spacetimedb_sdk::credentials::CredentialFileError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum RustLibError {
-    #[error("error with credentials")]   
+    #[error("error with credentials")]
     Credential {
         #[source]
-        source: CredentialFileError
+        source: CredentialFileError,
     },
-    #[error("error with spacetime-db sdk")]  
+    #[error("error with spacetime-db sdk: {source}")]
     SpacetimeSDK {
         #[source]
-        source: spacetimedb_sdk::Error
+        source: spacetimedb_sdk::Error,
     },
 
     #[error("reached wrong connection state: {0}")]

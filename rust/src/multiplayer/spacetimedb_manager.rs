@@ -1,7 +1,11 @@
 use crate::multiplayer::connection_module::ConnectionModule;
 use crate::register_player_reducer::register_player;
 
-use crate::{send_player_state, try_collect_coin, CoinNode, ConnectionState, DbConnection, DbPlayer, DbPlayerState, GameManager, GreenSlimeNode, LocalPlayerNode, LoginModule, PlatformNode, RustLibError, WorldBootstrap};
+use crate::{
+    CoinNode, ConnectionState, DbConnection, DbPlayer, DbPlayerState, GameManager, GreenSlimeNode,
+    LocalPlayerNode, LoginModule, PlatformNode, RustLibError, WorldBootstrap, send_player_state,
+    try_collect_coin,
+};
 use crate::{DbVector2, PlayerTableAccess, WorldSceneTableAccess};
 
 use godot::prelude::*;
@@ -15,9 +19,8 @@ use lazy_static::lazy_static;
 lazy_static! {
     static ref GLOBAL_CONNECTION: Arc<RwLock<SpacetimeDBManager>> =
         Arc::new(RwLock::new(SpacetimeDBManager::new()));
-
     pub static ref REGISTRATION_STATE: Arc<Mutex<RegistrationState>> =
-    Arc::new(Mutex::new(RegistrationState::default()));
+        Arc::new(Mutex::new(RegistrationState::default()));
 }
 
 #[derive(Default)]
@@ -61,7 +64,7 @@ impl SpacetimeDBManager {
 
             let mut connection = GLOBAL_CONNECTION.write().unwrap();
             *connection.login_module.get_state_mut() = ConnectionState::Disconnected;
-            
+
             return None;
         }
 
@@ -71,7 +74,7 @@ impl SpacetimeDBManager {
     pub fn connect(&mut self, username: &str) -> Result<(), RustLibError> {
         self.connect_to_server(username)?;
         self.register_subscribers()?;
-        
+
         self.login_module.set_scene_id(1);
         self.login_module.set_player_name(username.to_string());
 
@@ -79,7 +82,7 @@ impl SpacetimeDBManager {
 
         Ok(())
     }
-    
+
     pub fn get_connection(&self) -> Result<&DbConnection, RustLibError> {
         self.connection_module.get_connection()
     }
@@ -109,25 +112,22 @@ impl SpacetimeDBManager {
         }
 
         let connection = self.connection_module.get_connection()?;
-        match connection
-            .frame_tick() {
+        match connection.frame_tick() {
             Ok(_) => Ok(()),
-            Err(e) => {
-                match e {
-                    Error::Disconnected => {
-                        godot_print!("Disconnected from server");
+            Err(e) => match e {
+                Error::Disconnected => {
+                    godot_print!("Disconnected from server");
 
-                        *self.login_module.get_state_mut() = ConnectionState::Disconnected;
+                    *self.login_module.get_state_mut() = ConnectionState::Disconnected;
 
-                        Ok(())  
-                    },
-                    _ => {
-                        godot_print!("Error: {:?}", e);
-
-                        Err(RustLibError::SpacetimeSDK { source: e })
-                    }
+                    Ok(())
                 }
-            }
+                _ => {
+                    godot_print!("Error: {:?}", e);
+
+                    Err(RustLibError::SpacetimeSDK { source: e })
+                }
+            },
         }
     }
 }

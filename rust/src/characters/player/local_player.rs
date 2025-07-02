@@ -1,10 +1,12 @@
-use std::sync::{Arc, Mutex};
 use super::BasicPlayer;
+use std::sync::{Arc, Mutex};
 
-use crate::{register_player, DbConnection, DbPlayerState, DbVector2, RegistrationState, SpacetimeDBManager};
+use crate::{
+    DbConnection, DbPlayerState, DbVector2, RegistrationState, SpacetimeDBManager, register_player,
+};
 
-use godot::prelude::*;
 use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, Input};
+use godot::prelude::*;
 
 use spacetimedb_sdk::DbContext;
 
@@ -44,11 +46,14 @@ impl ICharacterBody2D for LocalPlayerNode {
 
 #[godot_api]
 impl LocalPlayerNode {
-    pub fn setup_multiplayer(connection: &DbConnection, registration_state: Arc<Mutex<RegistrationState>>) {
+    pub fn setup_multiplayer(
+        connection: &DbConnection,
+        registration_state: Arc<Mutex<RegistrationState>>,
+    ) {
         connection
             .subscription_builder()
             .subscribe("SELECT * FROM player");
-        
+
         let registration_state = registration_state.clone();
         connection
             .reducers
@@ -73,7 +78,7 @@ impl LocalPlayerNode {
                 }
             });
     }
-    
+
     #[func]
     pub fn get_player_position(&self) -> Vector2 {
         self.base().get_global_position()
@@ -114,7 +119,7 @@ impl LocalPlayerNode {
     fn send_inputs(&self, direction: f32, jump_pressed: bool, is_on_floor: bool) {
         let updated_velocity = self.base().get_velocity();
         let is_jumping = jump_pressed || (!is_on_floor && updated_velocity.y < 0.0);
-        
+
         let state = DbPlayerState {
             position: DbVector2::from(self.base().get_position()),
             direction: direction as i32,
@@ -125,7 +130,7 @@ impl LocalPlayerNode {
             godot_print!("Could not get database connection!");
             return;
         };
-        
+
         match connection.send_inputs(state) {
             Ok(_) => {}
             Err(e) => godot_print!("Failed to send inputs: {}", e),

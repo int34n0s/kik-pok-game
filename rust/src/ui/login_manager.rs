@@ -3,7 +3,7 @@ use crate::{ConnectionState, LevelManager, SpacetimeDBManager};
 use godot::classes::{Button, IVBoxContainer, Label, LineEdit, VBoxContainer};
 use godot::prelude::*;
 
-#[derive(Clone, PartialEq, Debug, Default)]
+#[derive(Clone, PartialEq, Debug, Default, PartialOrd)]
 pub enum LoginUIState {
     #[default]
     Initial,
@@ -68,7 +68,10 @@ impl IVBoxContainer for LoginScreen {
         drop(connection);
 
         let new_ui_state = match login_state {
-            ConnectionState::Disconnected if !matches!(self.ui_state, LoginUIState::Initial) => {
+            ConnectionState::Disconnected
+                if self.ui_state <= LoginUIState::LoggedIn
+                    && self.ui_state != LoginUIState::Initial =>
+            {
                 Some(LoginUIState::Failed(
                     "Tried to connect to db, change username please".to_string(),
                 ))
@@ -164,7 +167,6 @@ impl LoginScreen {
             }
             Err(e) => {
                 self.update_status_with_failed_state(&format!("Registration failed: {}", e));
-                return;
             }
         }
     }
