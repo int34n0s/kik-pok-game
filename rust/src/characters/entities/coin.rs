@@ -68,7 +68,7 @@ impl CoinNode {
 
                 return;
             };
-            
+
             match connection.collect_coin_at_position(position) {
                 Ok(_) => {
                     godot_print!(

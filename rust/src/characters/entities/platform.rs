@@ -1,7 +1,7 @@
+use crate::DbConnection;
 use godot::classes::{AnimatableBody2D, IAnimatableBody2D};
 use godot::prelude::*;
 use spacetimedb_sdk::DbContext;
-use crate::DbConnection;
 
 #[derive(GodotClass)]
 #[class(base=AnimatableBody2D)]

@@ -32,10 +32,10 @@ pub use db_vector_2_type::DbVector2;
 pub use green_slime_table::*;
 pub use green_slime_type::GreenSlime;
 pub use identity_connected_reducer::{
-    identity_connected, set_flags_for_identity_connected, IdentityConnectedCallbackId,
+    IdentityConnectedCallbackId, identity_connected, set_flags_for_identity_connected,
 };
 pub use identity_disconnected_reducer::{
-    identity_disconnected, set_flags_for_identity_disconnected, IdentityDisconnectedCallbackId,
+    IdentityDisconnectedCallbackId, identity_disconnected, set_flags_for_identity_disconnected,
 };
 pub use platform_table::*;
 pub use platform_type::Platform;
@@ -43,13 +43,13 @@ pub use player_score_table::*;
 pub use player_score_type::PlayerScore;
 pub use player_table::*;
 pub use register_player_reducer::{
-    register_player, set_flags_for_register_player, RegisterPlayerCallbackId,
+    RegisterPlayerCallbackId, register_player, set_flags_for_register_player,
 };
 pub use send_player_state_reducer::{
-    send_player_state, set_flags_for_send_player_state, SendPlayerStateCallbackId,
+    SendPlayerStateCallbackId, send_player_state, set_flags_for_send_player_state,
 };
 pub use try_collect_coin_reducer::{
-    set_flags_for_try_collect_coin, try_collect_coin, TryCollectCoinCallbackId,
+    TryCollectCoinCallbackId, set_flags_for_try_collect_coin, try_collect_coin,
 };
 pub use world_scene_table::*;
 pub use world_scene_type::WorldScene;
@@ -473,21 +473,21 @@ impl __sdk::SubscriptionHandle for SubscriptionHandle {
 /// either a [`DbConnection`] or an [`EventContext`] and operate on either.
 pub trait RemoteDbContext:
     __sdk::DbContext<
-    DbView = RemoteTables,
-    Reducers = RemoteReducers,
-    SetReducerFlags = SetReducerFlags,
-    SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
->
+        DbView = RemoteTables,
+        Reducers = RemoteReducers,
+        SetReducerFlags = SetReducerFlags,
+        SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
+    >
 {
 }
 impl<
-        Ctx: __sdk::DbContext<
+    Ctx: __sdk::DbContext<
             DbView = RemoteTables,
             Reducers = RemoteReducers,
             SetReducerFlags = SetReducerFlags,
             SubscriptionBuilder = __sdk::SubscriptionBuilder<RemoteModule>,
         >,
-    > RemoteDbContext for Ctx
+> RemoteDbContext for Ctx
 {
 }
 

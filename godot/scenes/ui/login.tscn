@@ -30,6 +30,7 @@ layout_mode = 2
 theme = ExtResource("2_ebl7d")
 text = "Ready to connect"
 horizontal_alignment = 1
+autowrap_mode = 1
 
 [node name="UsernameInput" type="LineEdit" parent="PanelContainer/LoginScreen"]
 layout_mode = 2

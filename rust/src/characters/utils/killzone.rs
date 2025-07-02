@@ -1,7 +1,7 @@
 use crate::SpacetimeDBManager;
 
-use godot::prelude::*;
 use godot::classes::{Area2D, CollisionShape2D, IArea2D, Timer};
+use godot::prelude::*;
 
 #[derive(GodotClass)]
 #[class(base=Area2D)]
@@ -63,14 +63,14 @@ impl KillZoneArea {
 
             return;
         };
-        
+
         Self::set_deferred_collision_shape(entered_body, false);
 
         let Some(connection) = SpacetimeDBManager::get_read_connection() else {
             godot_error!("Could not get database connection!");
             return;
         };
-        
+
         match connection.get_spawn_point() {
             Ok(Some(spawn_point)) => {
                 entered_body.set_position(spawn_point);
@@ -87,7 +87,7 @@ impl KillZoneArea {
 
         self.start_timer();
     }
-    
+
     fn set_deferred_collision_shape(body: &Gd<Node2D>, state: bool) {
         if let Some(mut collision_shape) =
             body.try_get_node_as::<CollisionShape2D>("CollisionShape2D")
