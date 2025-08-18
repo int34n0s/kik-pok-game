@@ -15,9 +15,3 @@ region_rect = Rect2(16, 0, 32, 9)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_pjyl4")
 one_way_collision = true
-
-[node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(4, 4)
-limit_bottom = 100
-limit_smoothed = true
-position_smoothing_enabled = true

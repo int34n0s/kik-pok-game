@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://cxtfhvi4p1cit"]
+[gd_scene load_steps=31 format=3 uid="uid://cxtfhvi4p1cit"]
 
 [ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/characters/local_player.tscn" id="1_o5qli"]
 [ext_resource type="PackedScene" uid="uid://23ginfucreyv" path="res://scenes/utils/game_manager.tscn" id="1_o6xl0"]
@@ -6,9 +6,48 @@
 [ext_resource type="PackedScene" uid="uid://dvnr05iprl34b" path="res://scenes/entities/coin.tscn" id="4_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/utils/killzone.tscn" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://diiskamvk2lsv" path="res://scenes/environment/platform.tscn" id="6_tefeu"]
+[ext_resource type="Script" uid="uid://df0tonmqsatt3" path="res://scenes/testing/animation_player.gd" id="6_w3s6p"]
 [ext_resource type="PackedScene" uid="uid://ynngt8156yje" path="res://scenes/characters/green_slime.tscn" id="7_o6xl0"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_tbgi4"]
+
+[sub_resource type="Animation" id="Animation_bp4uq"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(13, -60)]
+}
+
+[sub_resource type="Animation" id="Animation_o8t4h"]
+resource_name = "move"
+length = 3.0
+loop_mode = 2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 3),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(13, -60), Vector2(-124, -60)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ujr6a"]
+_data = {
+&"RESET": SubResource("Animation_bp4uq"),
+&"move": SubResource("Animation_o8t4h")
+}
 
 [sub_resource type="Animation" id="Animation_ss7e0"]
 length = 0.001
@@ -256,12 +295,6 @@ position = Vector2(-8, -3)
 [node name="Player" parent="MultiplayerManager" instance=ExtResource("1_o5qli")]
 position = Vector2(-15, -25)
 
-[node name="Camera2D2" type="Camera2D" parent="MultiplayerManager/Player"]
-zoom = Vector2(4, 4)
-limit_bottom = 100
-limit_smoothed = true
-position_smoothing_enabled = true
-
 [node name="Killzone" parent="." instance=ExtResource("5_tbgi4")]
 position = Vector2(-10, 79)
 
@@ -270,8 +303,15 @@ shape = SubResource("WorldBoundaryShape2D_tbgi4")
 
 [node name="Platforms" type="Node" parent="."]
 
-[node name="Platform" parent="Platforms" instance=ExtResource("6_tefeu")]
+[node name="Platform1" parent="Platforms" instance=ExtResource("6_tefeu")]
 position = Vector2(13, -60)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Platforms/Platform1"]
+libraries = {
+&"": SubResource("AnimationLibrary_ujr6a")
+}
+autoplay = "move"
+script = ExtResource("6_w3s6p")
 
 [node name="Platform2" parent="Platforms" instance=ExtResource("6_tefeu")]
 position = Vector2(299, -77)

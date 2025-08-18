@@ -111,7 +111,8 @@ impl SpacetimeDBManager {
             return Ok(());
         }
 
-        let connection = self.connection_module.get_connection()?;
+        let connection: &DbConnection = self.connection_module.get_connection()?;
+
         match connection.frame_tick() {
             Ok(_) => Ok(()),
             Err(e) => match e {

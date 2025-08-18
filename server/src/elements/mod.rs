@@ -1,9 +1,7 @@
 pub mod character;
-pub mod scene;
+pub mod coin;
 pub mod player_score;
 pub mod utils;
-pub mod coin;
-pub mod platform;
-pub mod slime;
+pub mod world_scene;
 
 pub use utils::*;

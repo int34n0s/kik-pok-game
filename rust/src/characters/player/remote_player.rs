@@ -1,6 +1,9 @@
+use crate::{DbPlayer, MultiplayerManager, RustLibError};
+
 use super::BasicPlayer;
 
-use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D};
+use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, Label, ResourceLoader};
+use godot::obj::BaseMut;
 use godot::prelude::*;
 
 /// Reduced strength to prevent jittering
@@ -16,6 +19,8 @@ const VERTICAL_DIFF_FRAME_THRESHOLD: i32 = 10;
 const DEADBAND_FRAME_THRESHOLD: i32 = 60;
 /// Minimum vertical difference to trigger correction
 const VERTICAL_DIFF_THRESHOLD: f32 = 3.0;
+
+pub const PLAYER_SCENE_PATH: &str = "res://scenes/characters/remote_player.tscn";
 
 #[derive(Clone, Debug)]
 struct RemoteState {
@@ -106,6 +111,65 @@ impl ICharacterBody2D for RemotePlayerNode {
 
 #[godot_api]
 impl RemotePlayerNode {
+    pub fn spawn_object(
+        mut base: BaseMut<MultiplayerManager>,
+        player: &DbPlayer,
+    ) -> Result<Gd<RemotePlayerNode>, RustLibError> {
+        let player_id = player.identity;
+        let name = &player.name;
+        let position = Vector2::new(player.state.position.x, player.state.position.y);
+
+        godot_print!(
+            "Spawning remote player {} ({}) at ({}, {})",
+            player_id,
+            name,
+            position.x,
+            position.y
+        );
+
+        let mut resource_loader = ResourceLoader::singleton();
+        let Some(packed_scene) = resource_loader.load(PLAYER_SCENE_PATH) else {
+            godot_print!("Failed to load resource at {}", PLAYER_SCENE_PATH);
+            return Err(RustLibError::ResourceLoadError(
+                PLAYER_SCENE_PATH.to_string(),
+            ));
+        };
+
+        let Ok(scene) = packed_scene.try_cast::<PackedScene>() else {
+            godot_print!("Failed to cast resource to PackedScene");
+            return Err(RustLibError::ResourceCastError(
+                PLAYER_SCENE_PATH.to_string(),
+                "PackedScene".to_string(),
+            ));
+        };
+
+        let Some(instance) = scene.instantiate() else {
+            godot_print!("Failed to instantiate scene");
+            return Err(RustLibError::ResourceInstantiateError(
+                PLAYER_SCENE_PATH.to_string(),
+            ));
+        };
+
+        let Ok(mut remote_player) = instance.try_cast::<RemotePlayerNode>() else {
+            godot_print!("Failed to cast instance to Player");
+            return Err(RustLibError::ResourceCastError(
+                PLAYER_SCENE_PATH.to_string(),
+                "RemotePlayerNode".to_string(),
+            ));
+        };
+
+        remote_player.set_position(position);
+        remote_player.set_name(&GString::from(player_id.to_string()));
+
+        if let Some(mut player_name) = remote_player.try_get_node_as::<Label>("PlayerName") {
+            player_name.set_text(&GString::from(name));
+        }
+
+        base.add_child(&remote_player);
+
+        Ok(remote_player)
+    }
+
     #[func]
     pub fn get_player_state(&self) -> Vector2 {
         self.base().get_global_position()
