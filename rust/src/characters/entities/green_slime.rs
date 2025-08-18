@@ -1,87 +1,49 @@
 use crate::DbConnection;
-use godot::classes::{AnimatedSprite2D, INode2D, RayCast2D};
+use godot::classes::{AnimatableBody2D, AnimationPlayer, IAnimatableBody2D};
 use godot::prelude::*;
-use spacetimedb_sdk::DbContext;
-
-const SPEED: f32 = 60.0;
 
 #[derive(GodotClass)]
-#[class(base=Node2D)]
+#[class(base=AnimatableBody2D)]
 pub struct GreenSlimeNode {
-    direction: i32,
-
-    ray_cast_right: Option<Gd<RayCast2D>>,
-    ray_cast_left: Option<Gd<RayCast2D>>,
-
-    animated_sprite: Option<Gd<AnimatedSprite2D>>,
+    animation_player: Option<Gd<AnimationPlayer>>,
 
     #[base]
-    base: Base<Node2D>,
+    base: Base<AnimatableBody2D>,
 }
 
 #[godot_api]
-impl INode2D for GreenSlimeNode {
-    fn init(base: Base<Node2D>) -> Self {
+impl IAnimatableBody2D for GreenSlimeNode {
+    fn init(base: Base<AnimatableBody2D>) -> Self {
         Self {
-            direction: 1,
-            ray_cast_right: None,
-            ray_cast_left: None,
-            animated_sprite: None,
             base,
+            animation_player: None,
         }
-    }
-
-    fn process(&mut self, delta: f64) {
-        if let Some(ref ray_cast_right) = self.ray_cast_right {
-            if ray_cast_right.is_colliding() {
-                self.direction = -1;
-
-                if let Some(ref mut animated_sprite) = self.animated_sprite {
-                    animated_sprite.set_flip_h(true);
-                }
-            }
-        }
-
-        if let Some(ref ray_cast_left) = self.ray_cast_left {
-            if ray_cast_left.is_colliding() {
-                self.direction = 1;
-
-                if let Some(ref mut animated_sprite) = self.animated_sprite {
-                    animated_sprite.set_flip_h(false);
-                }
-            }
-        }
-
-        // Update position
-        let mut position = self.base().get_position();
-        position.x += self.direction as f32 * SPEED * delta as f32;
-
-        self.base_mut().set_position(position);
     }
 
     fn ready(&mut self) {
-        self.ray_cast_right = self.base().try_get_node_as::<RayCast2D>("RayCastRight");
-        self.ray_cast_left = self.base().try_get_node_as::<RayCast2D>("RayCastLeft");
-        self.animated_sprite = self
+        self.animation_player = self
             .base()
-            .try_get_node_as::<AnimatedSprite2D>("AnimatedSprite");
-
-        if self.ray_cast_right.is_none() {
-            godot_error!("Could not find RayCastRight node");
-        }
-        if self.ray_cast_left.is_none() {
-            godot_error!("Could not find RayCastLeft node");
-        }
-        if self.animated_sprite.is_none() {
-            godot_error!("Could not find AnimatedSprite node");
-        }
+            .try_get_node_as::<AnimationPlayer>("AnimationPlayer");
     }
 }
 
 impl GreenSlimeNode {
-    pub fn setup_multiplayer(connection: &DbConnection) {
-        connection
-            .subscription_builder()
-            .subscribe("SELECT * FROM green_slime");
+    pub fn setup_multiplayer(_connection: &DbConnection) {}
+}
+
+#[godot_api]
+impl GreenSlimeNode {
+    /// Synchronize slime animation based on a shared world time (in microseconds).
+    /// Uses AnimationPlayer.advance(time) so Godot handles looping/ping-pong correctly.
+    #[func]
+    pub fn sync_based_on_time(&mut self, time_microseconds: f64) {
+        let Some(ref mut animation_player) = self.animation_player else {
+            return;
+        };
+
+        // Start (or restart) the current animation at t=0, then advance by the shared time.
+        let time_seconds = time_microseconds / 1_000_000.0;
+        animation_player.call("play", &["move".to_variant()]);
+        animation_player.call("advance", &[time_seconds.to_variant()]);
     }
 }

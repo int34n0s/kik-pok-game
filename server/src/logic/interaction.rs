@@ -1,6 +1,7 @@
-use crate::elements::coin::coin;
 use crate::elements::character::player;
-use crate::elements::{player_score::*, DbVector2};
+use crate::elements::player_score::PlayerScore;
+use crate::elements::DbVector2;
+use crate::elements::{coin::coin, player_score::player_score};
 
 use spacetimedb::{reducer, ReducerContext, Table};
 
@@ -13,7 +14,6 @@ pub fn try_collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(),
         position.y
     );
 
-    // Verify the player is registered
     let player = ctx
         .db
         .player()
@@ -21,7 +21,6 @@ pub fn try_collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(),
         .find(ctx.sender)
         .ok_or("Player not registered")?;
 
-    // Find the coin at this position
     let mut coin = ctx
         .db
         .coin()
@@ -29,42 +28,36 @@ pub fn try_collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(),
         .find(|coin| coin.position.x == position.x && coin.position.y == position.y)
         .ok_or("Coin not found at this position")?;
 
-    // Check if coin is already collected
-    if coin.is_collected {
+    if coin.collected_by.is_some() {
         return Err("Coin already collected".to_string());
     }
 
-    // Mark coin as collected
-    coin.is_collected = true;
     coin.collected_by = Some(ctx.sender);
     let updated_coin = ctx.db.coin().coin_id().update(coin);
 
-    // Update player score
     if let Some(mut score) = ctx.db.player_score().player_identity().find(ctx.sender) {
-        // Update existing score
         score.add_coin();
         let updated_score = ctx.db.player_score().player_identity().update(score);
 
         log::info!(
             "Player {} ({}) collected coin at ({}, {})! New total: {} coins",
-            updated_score.player_name,
+            player.name,
             ctx.sender,
             updated_coin.position.x,
             updated_coin.position.y,
             updated_score.coins_collected
         );
     } else {
-        // Create new score record
         let scene_id = updated_coin.scene_id;
 
-        let mut new_score = PlayerScore::new(ctx.sender, player.name.clone(), scene_id);
+        let mut new_score = PlayerScore::new(ctx.sender, scene_id);
         new_score.add_coin();
 
         let inserted_score = ctx.db.player_score().insert(new_score);
 
         log::info!(
             "Player {} ({}) collected their first coin at ({}, {})! Score: {} coins",
-            inserted_score.player_name,
+            player.name,
             ctx.sender,
             updated_coin.position.x,
             updated_coin.position.y,

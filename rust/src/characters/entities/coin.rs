@@ -58,6 +58,8 @@ impl CoinNode {
             .subscribe("SELECT * FROM coin");
     }
 
+    // pub fn spawn_object(id: u64, position: Vector2) {}
+
     #[func]
     fn on_body_entered(&mut self, body: Gd<Node2D>) {
         let position = self.base().get_global_position();

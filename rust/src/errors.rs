@@ -18,4 +18,13 @@ pub enum RustLibError {
 
     #[error("encountered incomplete world setup: {0}")]
     WorldSetup(String),
+
+    #[error("resource load error: {0}")]
+    ResourceLoadError(String),
+
+    #[error("resource cast error: {0} to {1}")]
+    ResourceCastError(String, String),
+
+    #[error("resource instantiate error: {0}")]
+    ResourceInstantiateError(String),
 }

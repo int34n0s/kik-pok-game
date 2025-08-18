@@ -1,5 +1,5 @@
-use spacetimedb::Identity;
 use crate::elements::DbVector2;
+use spacetimedb::Identity;
 
 #[spacetimedb::table(name = coin, public)]
 #[derive(Clone, Debug)]
@@ -11,6 +11,6 @@ pub struct Coin {
     pub position: DbVector2,
 
     pub scene_id: u32,
-    pub is_collected: bool,
+
     pub collected_by: Option<Identity>,
 }

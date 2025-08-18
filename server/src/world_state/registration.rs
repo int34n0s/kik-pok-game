@@ -1,5 +1,5 @@
-use crate::elements::scene::world_scene;
 use crate::elements::character::{player, DBPlayerState, DbPlayer};
+use crate::elements::world_scene::{world_scene, WorldScene};
 
 use spacetimedb::{reducer, ReducerContext, Table};
 
@@ -31,6 +31,11 @@ pub fn register_player(ctx: &ReducerContext, name: String, scene_id: u32) -> Res
         return Err("Name too long (max 20 characters)".to_string());
     }
 
+    let is_host = ctx.db.player().count() == 0;
+    if is_host {
+        WorldScene::set_creation_time(ctx, ctx.timestamp)?;
+    }
+
     match ctx.db.player().try_insert(DbPlayer {
         player_id: 0,
         identity: ctx.sender,
@@ -39,17 +44,20 @@ pub fn register_player(ctx: &ReducerContext, name: String, scene_id: u32) -> Res
     }) {
         Ok(player) => {
             log::info!(
-                "Player {} registered successfully with name: {} and id: {} in scene: {}",
+                "Player {} registered successfully with name: {} and id: {} in scene: {} (host: {})",
                 player.identity,
                 player.name,
                 player.player_id,
-                scene.name
+                scene.name,
+                is_host
             );
-            Ok(())
+            player
         }
         Err(e) => {
-            log::error!("Error registering player: {:?}", e);
-            Err("Failed to register player".to_string())
+            log::error!("Error registering player: {e:?}");
+            return Err("Failed to register player".to_string());
         }
-    }
+    };
+
+    Ok(())
 }

@@ -9,7 +9,6 @@ pub use errors::RustLibError;
 pub use characters::*;
 pub use multiplayer::*;
 pub use ui::*;
-pub use utils::*;
 
 use godot::prelude::*;
 

@@ -10,17 +10,16 @@ pub struct PlayerScore {
     #[unique]
     pub player_identity: Identity,
 
-    pub player_name: String,
     pub coins_collected: u32,
+
     pub scene_id: u32,
 }
 
 impl PlayerScore {
-    pub fn new(player_identity: Identity, player_name: String, scene_id: u32) -> Self {
+    pub fn new(player_identity: Identity, scene_id: u32) -> Self {
         Self {
             score_id: 0, // Auto-incremented
             player_identity,
-            player_name,
             coins_collected: 0,
             scene_id,
         }

@@ -1,4 +1,4 @@
-use crate::elements::character::{DBPlayerState, player};
+use crate::elements::character::{player, DBPlayerState};
 
 use spacetimedb::{reducer, ReducerContext};
 

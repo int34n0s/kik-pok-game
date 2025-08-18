@@ -1,5 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://cim4ynxn2fawe"]
+[gd_scene load_steps=3 format=3 uid="uid://cim4ynxn2fawe"]
 
+[ext_resource type="Script" uid="uid://dpyk6ry27rcg8" path="res://scripts/ui/login_button.gd" id="2_0ouj8"]
 [ext_resource type="Theme" uid="uid://cr825tg24nkiu" path="res://themes/menu/text_theme.tres" id="2_ebl7d"]
 
 [node name="LoginMenu" type="CenterContainer"]
@@ -26,14 +27,16 @@ text = "Kik Pok Game"
 horizontal_alignment = 1
 
 [node name="StatusLabel" type="Label" parent="PanelContainer/LoginScreen"]
+custom_minimum_size = Vector2(1000, 0)
 layout_mode = 2
 theme = ExtResource("2_ebl7d")
 text = "Ready to connect"
 horizontal_alignment = 1
-autowrap_mode = 1
+autowrap_mode = 3
 
 [node name="UsernameInput" type="LineEdit" parent="PanelContainer/LoginScreen"]
 layout_mode = 2
+text = "Alice"
 placeholder_text = "Enter your username"
 alignment = 1
 
@@ -47,3 +50,4 @@ alignment = 1
 [node name="LoginButton" type="Button" parent="PanelContainer/LoginScreen"]
 layout_mode = 2
 text = "Login"
+script = ExtResource("2_0ouj8")
