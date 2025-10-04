@@ -159,7 +159,8 @@ impl RemotePlayerNode {
         };
 
         remote_player.set_position(position);
-        remote_player.set_name(&GString::from(player_id.to_string()));
+        let player_id_sn = StringName::from(player_id.to_string().as_str());
+        remote_player.set_name(&player_id_sn);
 
         if let Some(mut player_name) = remote_player.try_get_node_as::<Label>("PlayerName") {
             player_name.set_text(&GString::from(name));

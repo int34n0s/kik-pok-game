@@ -27,11 +27,10 @@ impl IArea2D for CoinNode {
     }
 
     fn ready(&mut self) {
-        if let Some(mut tree) = self.base().get_tree() {
-            if let Some(manager_node) = tree.get_first_node_in_group("manager") {
+        if let Some(mut tree) = self.base().get_tree()
+            && let Some(manager_node) = tree.get_first_node_in_group("manager") {
                 self.game_manager = manager_node.try_cast::<GameManager>().ok();
             }
-        }
 
         if self.game_manager.is_none() {
             godot_error!("Could not find GameManager node in 'manager' group");

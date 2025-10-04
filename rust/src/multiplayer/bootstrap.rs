@@ -91,7 +91,8 @@ impl WorldBootstrap {
         };
 
         local_player.set_position(spawn_position.into());
-        local_player.set_name(&GString::from(player_id.to_string()));
+        let player_id_sn = StringName::from(player_id.to_string().as_str());
+        local_player.set_name(&player_id_sn);
 
         multiplayer_base.add_child(&local_player);
 
@@ -133,7 +134,8 @@ impl WorldBootstrap {
             };
 
             coin_node.set_position(coin.position.into());
-            coin_node.set_name(&GString::from(coin.coin_id.to_string()));
+            let coin_id_sn = StringName::from(coin.coin_id.to_string().as_str());
+            coin_node.set_name(&coin_id_sn);
 
             multiplayer_base.add_child(&coin_node);
         }

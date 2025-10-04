@@ -10,9 +10,9 @@ crate-type = ["cdylib"]
 remote-db = []
 
 [dependencies]
-godot = "0.3.1"
+godot = "0.4.0"
 
-spacetimedb-sdk = "1.2.0"
+spacetimedb-sdk = "1.5.0"
 
 thiserror = "2.0.12"
 lazy_static = "1.5.0"
