@@ -1,6 +1,6 @@
-use crate::elements::character::{player, DBPlayerState};
+use crate::elements::character::{DBPlayerState, player};
 
-use spacetimedb::{reducer, ReducerContext};
+use spacetimedb::{ReducerContext, reducer};
 
 #[reducer]
 pub fn send_player_state(ctx: &ReducerContext, state: DBPlayerState) -> Result<(), String> {

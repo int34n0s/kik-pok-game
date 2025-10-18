@@ -1,9 +1,9 @@
+use crate::elements::DbVector2;
 use crate::elements::character::player;
 use crate::elements::player_score::PlayerScore;
-use crate::elements::DbVector2;
 use crate::elements::{coin::coin, player_score::player_score};
 
-use spacetimedb::{reducer, ReducerContext, Table};
+use spacetimedb::{ReducerContext, Table, reducer};
 
 #[reducer]
 pub fn try_collect_coin(ctx: &ReducerContext, position: DbVector2) -> Result<(), String> {

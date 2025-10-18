@@ -1,6 +1,6 @@
-use crate::elements::coin::{coin, Coin};
-use crate::elements::world_scene::{world_scene, WorldScene};
 use crate::elements::DbVector2;
+use crate::elements::coin::{Coin, coin};
+use crate::elements::world_scene::{WorldScene, world_scene};
 
 use itertools::Itertools;
 use spacetimedb::{ReducerContext, Table};

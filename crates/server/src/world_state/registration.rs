@@ -1,7 +1,7 @@
-use crate::elements::character::{player, DBPlayerState, DbPlayer};
-use crate::elements::world_scene::{world_scene, WorldScene};
+use crate::elements::character::{DBPlayerState, DbPlayer, player};
+use crate::elements::world_scene::{WorldScene, world_scene};
 
-use spacetimedb::{reducer, ReducerContext, Table};
+use spacetimedb::{ReducerContext, Table, reducer};
 
 #[reducer]
 pub fn register_player(ctx: &ReducerContext, name: String, scene_id: u32) -> Result<(), String> {

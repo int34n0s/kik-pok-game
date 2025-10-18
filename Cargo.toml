@@ -1,0 +1,16 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/*"
+]
+default-members = [
+    "crates/rust"
+]
+
+[workspace.package]
+license = "MIT OR Apache-2.0"
+edition = "2024"
+
+[workspace.dependencies]
+spacetimedb = "1.6.0"
+spacetimedb-sdk = "1.6.0"

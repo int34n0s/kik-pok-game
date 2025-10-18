@@ -1,0 +1,4 @@
+[alias]
+server-build = "build -p spacetime-module --target wasm32-unknown-unknown"
+server-check = "check -p spacetime-module --target wasm32-unknown-unknown"
+client-build = "build -p rust"

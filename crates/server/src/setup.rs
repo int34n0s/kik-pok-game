@@ -1,7 +1,7 @@
 use crate::elements::{character::player, world_scene::world_scene};
 use crate::world_state::world_scene_config::WorldSceneConfig;
 
-use spacetimedb::{reducer, ReducerContext, Table};
+use spacetimedb::{ReducerContext, Table, reducer};
 
 #[reducer(init)]
 pub fn init(ctx: &ReducerContext) -> Result<(), String> {
