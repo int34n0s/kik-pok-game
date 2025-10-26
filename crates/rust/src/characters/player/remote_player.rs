@@ -3,6 +3,7 @@ use crate::{DbPlayer, MultiplayerManager, RustLibError};
 use super::BasicPlayer;
 
 use godot::classes::{AnimatedSprite2D, CharacterBody2D, ICharacterBody2D, Label, ResourceLoader};
+
 use godot::obj::BaseMut;
 use godot::prelude::*;
 
@@ -87,15 +88,21 @@ impl ICharacterBody2D for RemotePlayerNode {
 
         // Handle jump input using basic player - only jump when transitioning from not jumping to jumping
         let new_jump = self.current_jumping && !self.was_jumping && is_on_floor;
-        if new_jump {
-            self.basic_player.handle_jump(&mut velocity);
-        }
+        velocity = self.basic_player.handle_jump(
+            velocity,
+            self.base().get_platform_velocity(),
+            is_on_floor,
+            new_jump,
+        );
 
         // Update previous jump state for next frame
         self.was_jumping = self.current_jumping;
 
-        self.basic_player
-            .apply_horizontal_movement(&mut velocity, self.current_direction as f32);
+        self.basic_player.apply_horizontal_movement(
+            &mut velocity,
+            self.current_direction as f32,
+            is_on_floor,
+        );
 
         if let Some(server_state) = self.last_server_state.clone() {
             self.apply_position_correction(&server_state, delta);

@@ -1,13 +1,11 @@
 use crate::multiplayer::bootstrap::WorldBootstrap;
 use crate::*;
 
-use godot::classes::{Engine, INode, Node};
+use godot::classes::{INode, Node};
 use godot::prelude::*;
 
 use spacetimedb_sdk::Identity;
 use std::collections::HashMap;
-
-pub const FRAME_RATE: f32 = 60.0;
 
 #[derive(GodotClass)]
 #[class(base=Node)]
@@ -32,8 +30,6 @@ impl INode for MultiplayerManager {
     }
 
     fn ready(&mut self) {
-        Engine::singleton().set_max_fps(FRAME_RATE as i32);
-
         let Some(db_manager) = SpacetimeDBManager::get_read_connection() else {
             godot_print!("Failed to get database connection");
             return;

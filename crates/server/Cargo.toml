@@ -11,5 +11,6 @@ crate-type = ["cdylib"]
 [dependencies]
 log = "0.4"
 
-spacetimedb = { workspace = true }
 itertools = "0.14.0"
+
+spacetimedb = { workspace = true }
