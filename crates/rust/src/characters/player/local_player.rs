@@ -89,22 +89,30 @@ impl LocalPlayerNode {
         let mut velocity = self.base().get_velocity();
         let is_on_floor = self.base().is_on_floor();
 
+        let base = self.base();
+
         let jump_pressed = input.is_action_just_pressed("jump");
         let direction = input.get_axis("move_left", "move_right");
 
         // Apply gravity
         if !is_on_floor {
-            velocity.y += self.base().get_gravity().y * delta as f32;
+            velocity.y += base.get_gravity().y * delta as f32;
         }
 
-        // Handle jump using basic player
-        if jump_pressed && is_on_floor {
-            self.basic_player.handle_jump(&mut velocity);
-        }
+        godot_print!("Velocity before jump: {:?}", velocity);
+
+        velocity = self.basic_player.handle_jump(
+            velocity,
+            self.base().get_platform_velocity(),
+            is_on_floor,
+            jump_pressed,
+        );
+
+        godot_print!("Velocity after jump: {:?}", velocity);
 
         // Apply horizontal movement using basic player
         self.basic_player
-            .apply_horizontal_movement(&mut velocity, direction);
+            .apply_horizontal_movement(&mut velocity, direction, is_on_floor);
 
         // Update velocity and move
         self.base_mut().set_velocity(velocity);
