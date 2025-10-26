@@ -2,3 +2,5 @@
 *.exe
 *.tmp
 *.dll
+
+logs
