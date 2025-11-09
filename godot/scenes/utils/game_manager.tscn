@@ -5,13 +5,10 @@
 [node name="GameManager" type="GameManager"]
 
 [node name="ScoreLabel" type="Label" parent="."]
-offset_left = -173.0
-offset_top = -74.0
-offset_right = -89.0
-offset_bottom = -44.0
+offset_right = 1.0
+offset_bottom = 41.0
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_fonts/font = ExtResource("2_o2178")
 theme_override_font_sizes/font_size = 8
 text = "You collected X coins!"
-horizontal_alignment = 1
 autowrap_mode = 2

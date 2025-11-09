@@ -99,16 +99,12 @@ impl LocalPlayerNode {
             velocity.y += base.get_gravity().y * delta as f32;
         }
 
-        godot_print!("Velocity before jump: {:?}", velocity);
-
         velocity = self.basic_player.handle_jump(
             velocity,
             self.base().get_platform_velocity(),
             is_on_floor,
             jump_pressed,
         );
-
-        godot_print!("Velocity after jump: {:?}", velocity);
 
         // Apply horizontal movement using basic player
         self.basic_player

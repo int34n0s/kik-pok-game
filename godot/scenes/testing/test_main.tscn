@@ -238,6 +238,21 @@ _data = {
 &"move": SubResource("Animation_aoox7")
 }
 
+[sub_resource type="Animation" id="Animation_w3s6p"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-58, -26)]
+}
+
 [sub_resource type="Animation" id="Animation_tyaqm"]
 resource_name = "move"
 loop_mode = 2
@@ -254,39 +269,24 @@ tracks/0/keys = {
 "values": [Vector2(-58, -26), Vector2(-97, -25)]
 }
 
-[sub_resource type="Animation" id="Animation_w3s6p"]
-length = 0.001
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:position")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 0,
-"values": [Vector2(-58, -26)]
-}
-
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_ktng6"]
 _data = {
 &"RESET": SubResource("Animation_w3s6p"),
 &"move": SubResource("Animation_tyaqm")
 }
 
-[node name="Main" type="Node2D"]
+[node name="Main" type="ModesManager"]
 
 [node name="GameManager" parent="." groups=["manager"] instance=ExtResource("1_o6xl0")]
 
 [node name="ScoreLabel" parent="GameManager" index="0"]
-offset_left = 508.0
-offset_top = -404.0
-offset_right = 592.0
-offset_bottom = -374.0
+offset_left = 513.0
+offset_top = -403.0
+offset_right = 514.0
+offset_bottom = -362.0
 
 [node name="TileMapLayer" parent="." instance=ExtResource("1_sugp2")]
-position = Vector2(-8, -3)
+z_index = -1
 
 [node name="MultiplayerManager" type="MultiplayerManager" parent="."]
 
