@@ -1,6 +1,7 @@
-[gd_scene load_steps=31 format=3 uid="uid://b5mfr41bqhr1o"]
+[gd_scene load_steps=32 format=3 uid="uid://b5mfr41bqhr1o"]
 
 [ext_resource type="PackedScene" uid="uid://23ginfucreyv" path="res://scenes/utils/game_manager.tscn" id="1_2tiqo"]
+[ext_resource type="Script" uid="uid://cicvuk6dynbfh" path="res://scripts/world/entry.gd" id="1_bp4uq"]
 [ext_resource type="PackedScene" uid="uid://djk3o7lb4is77" path="res://scenes/environment/world.tscn" id="2_eo0pq"]
 [ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/utils/killzone.tscn" id="4_7n243"]
 [ext_resource type="PackedScene" uid="uid://diiskamvk2lsv" path="res://scenes/environment/platform.tscn" id="4_mnani"]
@@ -337,6 +338,7 @@ _data = {
 }
 
 [node name="Main" type="MultiplayerManager"]
+script = ExtResource("1_bp4uq")
 
 [node name="TileMapLayer" parent="." instance=ExtResource("2_eo0pq")]
 position = Vector2(-8, -3)

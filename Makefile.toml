@@ -3,7 +3,7 @@ default_to_workspace = false
 min_version = "0.36.0"
 
 [env]
-SPACETIME_CLIENT_DIR = "crates/rust/src/multiplayer/spacetimedb_client"
+SPACETIME_CLIENT_DIR = "crates/rust/src/spacetimedb_client"
 
 [tasks.update-sdk]
 description = "Update SpacetimeDB client SDK by regenerating Rust bindings"
