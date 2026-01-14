@@ -7,8 +7,8 @@ impl Default for LevelManager {
 }
 
 impl LevelManager {
-    pub fn new() -> Self {
-        LevelManager {}
+    pub const fn new() -> Self {
+        Self {}
     }
 
     pub fn get_entry_scene_path(&self) -> String {

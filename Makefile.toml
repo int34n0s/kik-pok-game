@@ -10,6 +10,8 @@ description = "Update SpacetimeDB client SDK by regenerating Rust bindings"
 script = [
     "echo 'Updating SpacetimeDB client SDK...'",
     "spacetime generate -p crates/server -o ${SPACETIME_CLIENT_DIR} --lang rust",
+    "echo 'Injecting clippy allows into generated code...'",
+    '''sed -i '' 's/#!\[allow(unused, clippy::all)\]/#![allow(unused, clippy::all, clippy::pedantic, clippy::nursery)]/' ${SPACETIME_CLIENT_DIR}/mod.rs''',
     "echo 'SpacetimeDB client SDK updated successfully!'"
 ]
 

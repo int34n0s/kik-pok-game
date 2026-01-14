@@ -3,7 +3,7 @@ use crate::{ConnectionState, LevelManager, SpacetimeDBManager};
 use godot::classes::{Button, IVBoxContainer, Label, LineEdit, VBoxContainer};
 use godot::prelude::*;
 
-#[derive(Clone, PartialEq, Debug, Default, PartialOrd)]
+#[derive(Clone, PartialEq, Eq, Debug, Default, PartialOrd)]
 pub enum LoginUIState {
     #[default]
     Initial,
@@ -56,7 +56,7 @@ impl IVBoxContainer for LoginScreen {
             if self.ui_state == LoginUIState::LoginAttempted
                 || self.ui_state == LoginUIState::Connecting
             {
-                self.update_status_with_failed_state(&format!("Connection error: {:?}", e));
+                self.update_status_with_failed_state(&format!("Connection error: {e:?}"));
             }
 
             return;
@@ -152,21 +152,21 @@ impl LoginScreen {
         self.ui_state = LoginUIState::Connecting;
 
         match connection.connect(&username) {
-            Ok(_) => {
+            Ok(()) => {
                 self.ui_state = LoginUIState::Connected;
             }
             Err(e) => {
-                self.update_status_with_failed_state(&format!("Connection failed: {}", e));
+                self.update_status_with_failed_state(&format!("Connection failed: {e}"));
                 return;
             }
         }
 
         match connection.register_player(username, 1) {
-            Ok(_) => {
+            Ok(()) => {
                 self.set_status("Registration request sent...");
             }
             Err(e) => {
-                self.update_status_with_failed_state(&format!("Registration failed: {}", e));
+                self.update_status_with_failed_state(&format!("Registration failed: {e}"));
             }
         }
     }
@@ -196,6 +196,7 @@ impl LoginScreen {
         }
     }
 
+    #[allow(clippy::needless_pass_by_ref_mut)]
     fn transition_to_game(&mut self) {
         if let Some(mut scene_tree) = self.base().get_tree() {
             let error = scene_tree.change_scene_to_file(&self.level_manager.get_entry_scene_path());

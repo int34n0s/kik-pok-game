@@ -21,7 +21,7 @@ impl Default for BasicPlayer {
 }
 
 impl BasicPlayer {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             speed: 100.0,
             jump_velocity: -300.0,
@@ -59,21 +59,25 @@ impl BasicPlayer {
         }
 
         if let Some(velocity_in_jump) = self.velocity_in_jump {
-            let target = if direction != 0.0 {
-                direction * self.speed
-            } else {
+            let target = if direction == 0.0 {
                 velocity_in_jump.x * MOMENTUM_FACTOR
+            } else {
+                direction * self.speed
             };
             velocity.x = target;
 
             return;
         }
 
-        if direction != 0.0 {
-            velocity.x = direction * self.speed;
+        if direction == 0.0 {
+            #[allow(clippy::cast_possible_truncation)]
+            {
+                velocity.x =
+                    godot::global::move_toward(f64::from(velocity.x), 0.0, f64::from(self.speed))
+                        as f32;
+            }
         } else {
-            velocity.x =
-                godot::global::move_toward(velocity.x as f64, 0.0, self.speed as f64) as f32;
+            velocity.x = direction * self.speed;
         }
     }
 

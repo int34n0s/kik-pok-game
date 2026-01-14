@@ -65,6 +65,7 @@ impl try_collect_coin for super::RemoteReducers {
         TryCollectCoinCallbackId(self.imp.on_reducer(
             "try_collect_coin",
             Box::new(move |ctx: &super::ReducerEventContext| {
+                #[allow(irrefutable_let_patterns)]
                 let super::ReducerEventContext {
                     event:
                         __sdk::ReducerEvent {

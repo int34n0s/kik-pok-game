@@ -48,7 +48,7 @@ impl ICharacterBody2D for LocalPlayerNode {
 impl LocalPlayerNode {
     pub fn setup_multiplayer(
         connection: &DbConnection,
-        registration_state: Arc<Mutex<RegistrationState>>,
+        registration_state: &Arc<Mutex<RegistrationState>>,
     ) {
         connection
             .subscription_builder()
@@ -96,7 +96,10 @@ impl LocalPlayerNode {
 
         // Apply gravity
         if !is_on_floor {
-            velocity.y += base.get_gravity().y * delta as f32;
+            #[allow(clippy::cast_possible_truncation)]
+            {
+                velocity.y += base.get_gravity().y * delta as f32;
+            }
         }
 
         velocity = self.basic_player.handle_jump(
@@ -124,6 +127,7 @@ impl LocalPlayerNode {
         let updated_velocity = self.base().get_velocity();
         let is_jumping = jump_pressed || (!is_on_floor && updated_velocity.y < 0.0);
 
+        #[allow(clippy::cast_possible_truncation)]
         let state = DbPlayerState {
             position: DbVector2::from(self.base().get_position()),
             direction: direction as i32,
@@ -136,7 +140,7 @@ impl LocalPlayerNode {
         };
 
         match connection.send_inputs(state) {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(e) => godot_print!("Failed to send inputs: {}", e),
         }
     }

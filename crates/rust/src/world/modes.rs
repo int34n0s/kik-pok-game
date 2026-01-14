@@ -40,8 +40,7 @@ impl INode2D for ModesManager {
 
     fn input(&mut self, event: Gd<InputEvent>) {
         if let Ok(event) = event.clone().try_cast::<InputEventMouseButton>() {
-            let pos = event.get_position();
-            godot_print!("click_pos: {:?}, {}", pos, event.is_pressed());
+            let _pos = event.get_position();
             return;
         }
 
@@ -54,8 +53,6 @@ impl INode2D for ModesManager {
             // Then convert local coords -> map cell.
             let local_pos: Vector2 = tilemap.get_local_mouse_position();
             let cell: Vector2i = tilemap.local_to_map(local_pos);
-
-            godot_print!("cell: {:?}", cell);
 
             if cell != self.hovered_cell {
                 self.hovered_cell = cell;

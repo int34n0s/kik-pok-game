@@ -2,6 +2,11 @@
 name = "rust"
 version = "0.1.0"
 edition = "2024"
+description = "Godot GDExtension for kik-pok game"
+license = "MIT"
+repository = "https://github.com/int34n0s/kik-pok-game"
+keywords = ["godot", "game", "multiplayer"]
+categories = ["games"]
 
 [lib]
 crate-type = ["cdylib"]
@@ -10,10 +15,8 @@ crate-type = ["cdylib"]
 remote-db = []
 
 [dependencies]
-godot = "0.4.0"
+godot = "0.4.5"
 
 spacetimedb-sdk = { workspace = true }
 
 thiserror = "2.0.12"
-lazy_static = "1.5.0"
-chrono = "0.4.41"

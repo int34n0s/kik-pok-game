@@ -26,6 +26,7 @@ impl INode for MultiplayerManager {
     }
 
     fn process(&mut self, delta: f64) {
+        #[allow(clippy::cast_possible_truncation)]
         self.handle_multiplayer_updates(delta as f32);
     }
 
@@ -106,7 +107,7 @@ impl MultiplayerManager {
             .remote_players
             .keys()
             .filter(|&player_id| !current_remote_players.contains(player_id))
-            .cloned()
+            .copied()
             .collect();
 
         for player_id in players_to_remove {

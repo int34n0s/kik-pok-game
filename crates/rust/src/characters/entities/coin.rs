@@ -8,8 +8,6 @@ use spacetimedb_sdk::DbContext;
 #[derive(GodotClass)]
 #[class(base=Area2D)]
 pub struct CoinNode {
-    game_manager: Option<Gd<GameManager>>,
-
     animation_player: Option<Gd<AnimationPlayer>>,
 
     #[base]
@@ -20,23 +18,12 @@ pub struct CoinNode {
 impl IArea2D for CoinNode {
     fn init(base: Base<Area2D>) -> Self {
         Self {
-            game_manager: None,
             animation_player: None,
             base,
         }
     }
 
     fn ready(&mut self) {
-        if let Some(mut tree) = self.base().get_tree()
-            && let Some(manager_node) = tree.get_first_node_in_group("manager")
-        {
-            self.game_manager = manager_node.try_cast::<GameManager>().ok();
-        }
-
-        if self.game_manager.is_none() {
-            godot_error!("Could not find GameManager node in 'manager' group");
-        }
-
         self.animation_player = self
             .base()
             .try_get_node_as::<AnimationPlayer>("AnimationPlayer");
@@ -72,7 +59,7 @@ impl CoinNode {
             };
 
             match connection.collect_coin_at_position(position) {
-                Ok(_) => {
+                Ok(()) => {
                     godot_print!(
                         "Coin collected successfully at ({}, {})!",
                         position.x,

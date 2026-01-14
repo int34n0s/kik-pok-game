@@ -63,6 +63,7 @@ impl send_player_state for super::RemoteReducers {
         SendPlayerStateCallbackId(self.imp.on_reducer(
             "send_player_state",
             Box::new(move |ctx: &super::ReducerEventContext| {
+                #[allow(irrefutable_let_patterns)]
                 let super::ReducerEventContext {
                     event:
                         __sdk::ReducerEvent {

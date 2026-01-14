@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://cim4ynxn2fawe"]
 
 [ext_resource type="Script" uid="uid://dpyk6ry27rcg8" path="res://scripts/ui/login_button.gd" id="2_0ouj8"]
-[ext_resource type="Theme" uid="uid://cr825tg24nkiu" path="res://themes/menu/text_theme.tres" id="2_ebl7d"]
+[ext_resource type="Theme" uid="uid://cr825tg24nkiu" path="res://themes/menu/login_screen/text_theme.tres" id="2_ebl7d"]
 
 [node name="LoginMenu" type="CenterContainer"]
 anchors_preset = 15

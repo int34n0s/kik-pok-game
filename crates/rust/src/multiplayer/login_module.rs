@@ -1,6 +1,6 @@
 use crate::RustLibError;
 
-#[derive(Clone, PartialEq, Debug, Default)]
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub enum ConnectionState {
     #[default]
     Disconnected,
@@ -17,7 +17,7 @@ pub struct LoginModule {
 }
 
 impl LoginModule {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             state: ConnectionState::Disconnected,
             scene_id: None,
@@ -29,19 +29,19 @@ impl LoginModule {
         self.player_name = Some(player_name);
     }
 
-    pub fn set_scene_id(&mut self, scene_id: u32) {
+    pub const fn set_scene_id(&mut self, scene_id: u32) {
         self.scene_id = Some(scene_id);
     }
 
-    pub fn get_state(&self) -> &ConnectionState {
+    pub const fn get_state(&self) -> &ConnectionState {
         &self.state
     }
 
-    pub fn get_state_mut(&mut self) -> &mut ConnectionState {
+    pub const fn get_state_mut(&mut self) -> &mut ConnectionState {
         &mut self.state
     }
 
-    pub fn get_scene_id(&self) -> Option<u32> {
+    pub const fn get_scene_id(&self) -> Option<u32> {
         self.scene_id
     }
 

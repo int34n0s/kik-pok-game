@@ -2,8 +2,11 @@
 name = "spacetime-module"
 version = "0.1.0"
 edition = "2024"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+description = "SpacetimeDB server module for kik-pok game"
+license = "MIT"
+repository = "https://github.com/int34n0s/kik-pok-game"
+keywords = ["spacetimedb", "game", "multiplayer"]
+categories = ["games"]
 
 [lib]
 crate-type = ["cdylib"]

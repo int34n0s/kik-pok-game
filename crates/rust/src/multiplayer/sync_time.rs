@@ -7,6 +7,7 @@ pub fn get_diff_between_timestamps(world_scene: &WorldScene) -> i64 {
         .creation_time
         .to_time_duration_since_unix_epoch()
         .to_micros();
+    #[allow(clippy::cast_possible_truncation)]
     let last_update_time = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
