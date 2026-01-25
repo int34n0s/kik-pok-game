@@ -188,7 +188,6 @@ impl RemotePlayerNode {
     }
 
     #[func]
-    #[allow(clippy::missing_const_for_fn)]
     pub fn set_player_position(&mut self, direction: i32, is_jumping: bool, position: Vector2) {
         self.last_server_state = Some(RemoteState {
             position,

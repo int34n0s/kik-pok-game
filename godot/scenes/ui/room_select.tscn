@@ -1,0 +1,72 @@
+[gd_scene load_steps=3 format=3 uid="uid://fttmvpt1ssrd"]
+
+[ext_resource type="Script" uid="uid://co3o30228d8b6" path="res://scripts/ui/room_select.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://dv2s05cd6wu1h" path="res://themes/menu/main_menu/menu_theme.tres" id="2_theme"]
+
+[node name="RoomSelect" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme = ExtResource("2_theme")
+
+[node name="RoomSelectScreen" type="RoomSelectScreen" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/RoomSelectScreen"]
+layout_mode = 2
+text = "Select Room"
+horizontal_alignment = 1
+
+[node name="GridContainer" type="GridContainer" parent="PanelContainer/RoomSelectScreen"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 3
+
+[node name="Room1Button" type="Button" parent="PanelContainer/RoomSelectScreen/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Room 1"
+
+[node name="Room2Button" type="Button" parent="PanelContainer/RoomSelectScreen/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Room 2"
+
+[node name="Room3Button" type="Button" parent="PanelContainer/RoomSelectScreen/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Room 3"
+
+[node name="Room4Button" type="Button" parent="PanelContainer/RoomSelectScreen/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Room 4"
+
+[node name="Room5Button" type="Button" parent="PanelContainer/RoomSelectScreen/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Room 5"
+
+[node name="Room6Button" type="Button" parent="PanelContainer/RoomSelectScreen/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Room 6"
+
+[node name="BackButton" type="Button" parent="PanelContainer/RoomSelectScreen"]
+layout_mode = 2
+text = "Back"
+
+[connection signal="pressed" from="PanelContainer/RoomSelectScreen/BackButton" to="." method="_on_back_pressed"]

@@ -47,6 +47,5 @@ impl ICenterContainer for SettingsPanel {
 
 #[godot_api]
 impl SettingsPanel {
-    #[allow(clippy::missing_const_for_fn)]
     pub fn setup_multiplayer(_connection: &DbConnection) {}
 }

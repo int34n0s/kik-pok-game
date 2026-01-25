@@ -45,5 +45,5 @@ impl PlatformNode {
 }
 
 impl PlatformNode {
-    pub const fn setup_multiplayer(_connection: &DbConnection) {}
+    pub fn setup_multiplayer(_connection: &DbConnection) {}
 }

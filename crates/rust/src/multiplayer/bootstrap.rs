@@ -20,7 +20,7 @@ impl Default for WorldBootstrap {
 }
 
 impl WorldBootstrap {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 

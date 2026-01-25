@@ -48,13 +48,13 @@ impl ICharacterBody2D for LocalPlayerNode {
 impl LocalPlayerNode {
     pub fn setup_multiplayer(
         connection: &DbConnection,
-        registration_state: &Arc<Mutex<RegistrationState>>,
+        registration_state: Arc<Mutex<RegistrationState>>,
     ) {
         connection
             .subscription_builder()
             .subscribe("SELECT * FROM player");
 
-        let registration_state = registration_state.clone();
+        let registration_state = registration_state;
         connection
             .reducers
             .on_register_player(move |ctx, _name, _scene_id| match &ctx.event.status {

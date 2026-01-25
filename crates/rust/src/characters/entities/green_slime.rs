@@ -28,7 +28,6 @@ impl IAnimatableBody2D for GreenSlimeNode {
 }
 
 impl GreenSlimeNode {
-    #[allow(clippy::missing_const_for_fn)]
     pub fn setup_multiplayer(_connection: &DbConnection) {}
 }
 

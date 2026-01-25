@@ -1,0 +1,19 @@
+[gd_resource type="Theme" load_steps=6 format=3 uid="uid://dv2s05cd6wu1h"]
+
+[ext_resource type="StyleBox" uid="uid://cmwwx5vtkflpk" path="res://themes/menu/main_menu/button_normal.tres" id="1_normal"]
+[ext_resource type="StyleBox" uid="uid://cbvq8ihmxefvb" path="res://themes/menu/main_menu/button_hover.tres" id="2_hover"]
+[ext_resource type="StyleBox" uid="uid://x4ogybtdvcup" path="res://themes/menu/main_menu/button_pressed.tres" id="3_pressed"]
+[ext_resource type="StyleBox" uid="uid://bqprgucm05ddg" path="res://themes/menu/main_menu/panel_container.tres" id="4_panel"]
+[ext_resource type="FontFile" uid="uid://dqoovl4fbxitg" path="res://assets/fonts/PixelOperator8.ttf" id="5_font"]
+
+[resource]
+default_font = ExtResource("5_font")
+default_font_size = 16
+Button/styles/hover = ExtResource("2_hover")
+Button/styles/normal = ExtResource("1_normal")
+Button/styles/pressed = ExtResource("3_pressed")
+GridContainer/constants/h_separation = 8
+GridContainer/constants/v_separation = 8
+Label/font_sizes/font_size = 20
+PanelContainer/styles/panel = ExtResource("4_panel")
+VBoxContainer/constants/separation = 10

@@ -21,7 +21,7 @@ impl Default for BasicPlayer {
 }
 
 impl BasicPlayer {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             speed: 100.0,
             jump_velocity: -300.0,

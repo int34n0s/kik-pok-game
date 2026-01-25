@@ -7,7 +7,7 @@ impl Default for LevelManager {
 }
 
 impl LevelManager {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {}
     }
 

@@ -35,7 +35,6 @@ pub struct SpacetimeDBManager {
 }
 
 impl SpacetimeDBManager {
-    #[allow(clippy::missing_const_for_fn)]
     pub fn new() -> Self {
         Self {
             connection_module: ConnectionModule::new(),
@@ -97,7 +96,7 @@ impl SpacetimeDBManager {
         PlatformNode::setup_multiplayer(connection);
         GreenSlimeNode::setup_multiplayer(connection);
         WorldBootstrap::setup_multiplayer(connection);
-        LocalPlayerNode::setup_multiplayer(connection, &REGISTRATION_STATE);
+        LocalPlayerNode::setup_multiplayer(connection, Arc::clone(&*REGISTRATION_STATE));
 
         Ok(())
     }

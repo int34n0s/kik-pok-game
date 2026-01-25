@@ -1,0 +1,78 @@
+[gd_scene load_steps=3 format=3 uid="uid://clevel_select_scene"]
+
+[ext_resource type="Script" uid="uid://clevel_select_script" path="res://scripts/ui/level_select.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://dv2s05cd6wu1h" path="res://themes/menu/main_menu/menu_theme.tres" id="2_theme"]
+
+[node name="LevelSelect" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme = ExtResource("2_theme")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Select Level"
+horizontal_alignment = 1
+
+[node name="GridContainer" type="GridContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 3
+
+[node name="Level1Button" type="Button" parent="PanelContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Level 1"
+
+[node name="Level2Button" type="Button" parent="PanelContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Level 2"
+
+[node name="Level3Button" type="Button" parent="PanelContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Level 3"
+
+[node name="Level4Button" type="Button" parent="PanelContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Level 4"
+
+[node name="Level5Button" type="Button" parent="PanelContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Level 5"
+
+[node name="FinalButton" type="Button" parent="PanelContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Final"
+
+[node name="BackButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Back"
+
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level1Button" to="." method="_on_level_pressed" binds=[1]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level2Button" to="." method="_on_level_pressed" binds=[2]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level3Button" to="." method="_on_level_pressed" binds=[3]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level4Button" to="." method="_on_level_pressed" binds=[4]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level5Button" to="." method="_on_level_pressed" binds=[5]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/FinalButton" to="." method="_on_level_pressed" binds=[6]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/BackButton" to="." method="_on_back_pressed"]

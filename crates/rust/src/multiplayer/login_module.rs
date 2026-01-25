@@ -17,7 +17,7 @@ pub struct LoginModule {
 }
 
 impl LoginModule {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             state: ConnectionState::Disconnected,
             scene_id: None,
@@ -29,19 +29,19 @@ impl LoginModule {
         self.player_name = Some(player_name);
     }
 
-    pub const fn set_scene_id(&mut self, scene_id: u32) {
+    pub fn set_scene_id(&mut self, scene_id: u32) {
         self.scene_id = Some(scene_id);
     }
 
-    pub const fn get_state(&self) -> &ConnectionState {
+    pub fn get_state(&self) -> &ConnectionState {
         &self.state
     }
 
-    pub const fn get_state_mut(&mut self) -> &mut ConnectionState {
+    pub fn get_state_mut(&mut self) -> &mut ConnectionState {
         &mut self.state
     }
 
-    pub const fn get_scene_id(&self) -> Option<u32> {
+    pub fn get_scene_id(&self) -> Option<u32> {
         self.scene_id
     }
 

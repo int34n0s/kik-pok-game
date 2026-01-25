@@ -20,7 +20,7 @@ pub struct ConnectionModule {
 }
 
 impl ConnectionModule {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self { connection: None }
     }
 
