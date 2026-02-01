@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://clevel_select_scene"]
+[gd_scene load_steps=3 format=3 uid="uid://8ukp8i5hir3k"]
 
-[ext_resource type="Script" uid="uid://clevel_select_script" path="res://scripts/ui/level_select.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bx7h6i1feju01" path="res://scripts/ui/level_select.gd" id="1_script"]
 [ext_resource type="Theme" uid="uid://dv2s05cd6wu1h" path="res://themes/menu/main_menu/menu_theme.tres" id="2_theme"]
 
 [node name="LevelSelect" type="CenterContainer"]
@@ -69,10 +69,10 @@ text = "Final"
 layout_mode = 2
 text = "Back"
 
-[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level1Button" to="." method="_on_level_pressed" binds=[1]]
-[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level2Button" to="." method="_on_level_pressed" binds=[2]]
-[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level3Button" to="." method="_on_level_pressed" binds=[3]]
-[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level4Button" to="." method="_on_level_pressed" binds=[4]]
-[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level5Button" to="." method="_on_level_pressed" binds=[5]]
-[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/FinalButton" to="." method="_on_level_pressed" binds=[6]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level1Button" to="." method="_on_level_pressed" binds= [1]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level2Button" to="." method="_on_level_pressed" binds= [2]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level3Button" to="." method="_on_level_pressed" binds= [3]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level4Button" to="." method="_on_level_pressed" binds= [4]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/Level5Button" to="." method="_on_level_pressed" binds= [5]]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/GridContainer/FinalButton" to="." method="_on_level_pressed" binds= [6]]
 [connection signal="pressed" from="PanelContainer/VBoxContainer/BackButton" to="." method="_on_back_pressed"]
