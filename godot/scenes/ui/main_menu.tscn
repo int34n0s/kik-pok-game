@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3 uid="uid://dtojkprd382wb"]
+
+[ext_resource type="Script" uid="uid://bej7yrn0wbsj2" path="res://scripts/ui/main_menu.gd" id="1_script"]
+[ext_resource type="Theme" uid="uid://dv2s05cd6wu1h" path="res://themes/menu/main_menu/menu_theme.tres" id="2_theme"]
+
+[node name="MainMenu" type="CenterContainer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+theme = ExtResource("2_theme")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Some 2D Game"
+horizontal_alignment = 1
+
+[node name="SinglePlayerButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Single Player"
+
+[node name="MultiPlayerButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Multiplayer"
+
+[node name="SettingsButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Settings"
+
+[node name="QuitButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Quit"
+
+[connection signal="pressed" from="PanelContainer/VBoxContainer/SinglePlayerButton" to="." method="_on_single_player_pressed"]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/MultiPlayerButton" to="." method="_on_multiplayer_pressed"]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/SettingsButton" to="." method="_on_settings_pressed"]
+[connection signal="pressed" from="PanelContainer/VBoxContainer/QuitButton" to="." method="_on_quit_pressed"]

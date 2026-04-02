@@ -82,20 +82,30 @@ impl ICharacterBody2D for RemotePlayerNode {
         let is_on_floor = self.base().is_on_floor();
 
         if !is_on_floor {
-            velocity.y += self.base().get_gravity().y * delta as f32;
+            #[allow(clippy::cast_possible_truncation)]
+            {
+                velocity.y += self.base().get_gravity().y * delta as f32;
+            }
         }
 
         // Handle jump input using basic player - only jump when transitioning from not jumping to jumping
         let new_jump = self.current_jumping && !self.was_jumping && is_on_floor;
-        if new_jump {
-            self.basic_player.handle_jump(&mut velocity);
-        }
+        velocity = self.basic_player.handle_jump(
+            velocity,
+            self.base().get_platform_velocity(),
+            is_on_floor,
+            new_jump,
+        );
 
         // Update previous jump state for next frame
         self.was_jumping = self.current_jumping;
 
-        self.basic_player
-            .apply_horizontal_movement(&mut velocity, self.current_direction as f32);
+        #[allow(clippy::cast_precision_loss)]
+        self.basic_player.apply_horizontal_movement(
+            &mut velocity,
+            self.current_direction as f32,
+            is_on_floor,
+        );
 
         if let Some(server_state) = self.last_server_state.clone() {
             self.apply_position_correction(&server_state, delta);
@@ -104,6 +114,7 @@ impl ICharacterBody2D for RemotePlayerNode {
         self.base_mut().set_velocity(velocity);
         self.base_mut().move_and_slide();
 
+        #[allow(clippy::cast_precision_loss)]
         self.basic_player
             .handle_animation(self.current_direction as f32, is_on_floor);
     }
@@ -114,7 +125,7 @@ impl RemotePlayerNode {
     pub fn spawn_object(
         mut base: BaseMut<MultiplayerManager>,
         player: &DbPlayer,
-    ) -> Result<Gd<RemotePlayerNode>, RustLibError> {
+    ) -> Result<Gd<Self>, RustLibError> {
         let player_id = player.identity;
         let name = &player.name;
         let position = Vector2::new(player.state.position.x, player.state.position.y);
@@ -150,7 +161,7 @@ impl RemotePlayerNode {
             ));
         };
 
-        let Ok(mut remote_player) = instance.try_cast::<RemotePlayerNode>() else {
+        let Ok(mut remote_player) = instance.try_cast::<Self>() else {
             godot_print!("Failed to cast instance to Player");
             return Err(RustLibError::ResourceCastError(
                 PLAYER_SCENE_PATH.to_string(),
@@ -219,9 +230,8 @@ impl RemotePlayerNode {
             }
 
             return;
-        } else {
-            self.vertical_diff_frame_count = 0;
         }
+        self.vertical_diff_frame_count = 0;
 
         if distance <= CORRECTION_DEADBAND {
             self.deadband_frame_count = 0;

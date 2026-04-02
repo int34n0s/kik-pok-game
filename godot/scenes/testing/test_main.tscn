@@ -1,12 +1,12 @@
-[gd_scene load_steps=27 format=3 uid="uid://cxtfhvi4p1cit"]
+[gd_scene load_steps=30 format=3 uid="uid://cxtfhvi4p1cit"]
 
 [ext_resource type="PackedScene" uid="uid://cn4kx2e0wrut1" path="res://scenes/characters/local_player.tscn" id="1_o5qli"]
-[ext_resource type="PackedScene" uid="uid://23ginfucreyv" path="res://scenes/utils/game_manager.tscn" id="1_o6xl0"]
 [ext_resource type="PackedScene" uid="uid://djk3o7lb4is77" path="res://scenes/environment/world.tscn" id="1_sugp2"]
 [ext_resource type="PackedScene" uid="uid://dvnr05iprl34b" path="res://scenes/entities/coin.tscn" id="4_jyhfs"]
 [ext_resource type="PackedScene" uid="uid://dubaprmuoencm" path="res://scenes/utils/killzone.tscn" id="5_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://diiskamvk2lsv" path="res://scenes/environment/platform.tscn" id="6_tefeu"]
 [ext_resource type="PackedScene" uid="uid://ynngt8156yje" path="res://scenes/characters/green_slime.tscn" id="7_o6xl0"]
+[ext_resource type="PackedScene" uid="uid://bmp0eqo5peogi" path="res://scenes/ui/status_panel.tscn" id="7_tyaqm"]
 
 [sub_resource type="WorldBoundaryShape2D" id="WorldBoundaryShape2D_tbgi4"]
 
@@ -238,18 +238,47 @@ _data = {
 &"move": SubResource("Animation_aoox7")
 }
 
-[node name="Main" type="Node2D"]
+[sub_resource type="Animation" id="Animation_w3s6p"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector2(-58, -26)]
+}
 
-[node name="GameManager" parent="." groups=["manager"] instance=ExtResource("1_o6xl0")]
+[sub_resource type="Animation" id="Animation_tyaqm"]
+resource_name = "move"
+loop_mode = 2
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector2(-58, -26), Vector2(-97, -25)]
+}
 
-[node name="ScoreLabel" parent="GameManager" index="0"]
-offset_left = 508.0
-offset_top = -404.0
-offset_right = 592.0
-offset_bottom = -374.0
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ktng6"]
+_data = {
+&"RESET": SubResource("Animation_w3s6p"),
+&"move": SubResource("Animation_tyaqm")
+}
+
+[node name="Main" type="ModesManager"]
 
 [node name="TileMapLayer" parent="." instance=ExtResource("1_sugp2")]
-position = Vector2(-8, -3)
+z_index = -1
 
 [node name="MultiplayerManager" type="MultiplayerManager" parent="."]
 
@@ -321,6 +350,15 @@ libraries = {
 }
 autoplay = "move"
 
+[node name="Platform8" parent="Platforms" instance=ExtResource("6_tefeu")]
+position = Vector2(-58, -26)
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Platforms/Platform8"]
+libraries = {
+&"": SubResource("AnimationLibrary_ktng6")
+}
+autoplay = "move"
+
 [node name="Slimes" type="Node" parent="."]
 
 [node name="Green Slime" parent="Slimes" instance=ExtResource("7_o6xl0")]
@@ -374,4 +412,10 @@ position = Vector2(784, -296)
 [node name="Coin12" parent="Coins" instance=ExtResource("4_jyhfs")]
 position = Vector2(882, -312)
 
-[editable path="GameManager"]
+[node name="StatusPanel" parent="." instance=ExtResource("7_tyaqm")]
+visible = false
+z_index = 10
+offset_left = -523.0
+offset_top = -93.0
+offset_right = 477.0
+offset_bottom = 48.0

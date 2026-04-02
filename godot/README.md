@@ -1,4 +1,4 @@
-# Kik-Pok Game UI
+# Some 2D Game UI
 
 So, overall there is a need to develop a few levels to make the game more entertaining
 

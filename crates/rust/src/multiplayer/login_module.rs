@@ -1,6 +1,6 @@
 use crate::RustLibError;
 
-#[derive(Clone, PartialEq, Debug, Default)]
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub enum ConnectionState {
     #[default]
     Disconnected,

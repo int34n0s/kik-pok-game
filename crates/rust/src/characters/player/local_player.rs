@@ -54,7 +54,7 @@ impl LocalPlayerNode {
             .subscription_builder()
             .subscribe("SELECT * FROM player");
 
-        let registration_state = registration_state.clone();
+        let registration_state = registration_state;
         connection
             .reducers
             .on_register_player(move |ctx, _name, _scene_id| match &ctx.event.status {
@@ -89,22 +89,29 @@ impl LocalPlayerNode {
         let mut velocity = self.base().get_velocity();
         let is_on_floor = self.base().is_on_floor();
 
+        let base = self.base();
+
         let jump_pressed = input.is_action_just_pressed("jump");
         let direction = input.get_axis("move_left", "move_right");
 
         // Apply gravity
         if !is_on_floor {
-            velocity.y += self.base().get_gravity().y * delta as f32;
+            #[allow(clippy::cast_possible_truncation)]
+            {
+                velocity.y += base.get_gravity().y * delta as f32;
+            }
         }
 
-        // Handle jump using basic player
-        if jump_pressed && is_on_floor {
-            self.basic_player.handle_jump(&mut velocity);
-        }
+        velocity = self.basic_player.handle_jump(
+            velocity,
+            self.base().get_platform_velocity(),
+            is_on_floor,
+            jump_pressed,
+        );
 
         // Apply horizontal movement using basic player
         self.basic_player
-            .apply_horizontal_movement(&mut velocity, direction);
+            .apply_horizontal_movement(&mut velocity, direction, is_on_floor);
 
         // Update velocity and move
         self.base_mut().set_velocity(velocity);
@@ -120,6 +127,7 @@ impl LocalPlayerNode {
         let updated_velocity = self.base().get_velocity();
         let is_jumping = jump_pressed || (!is_on_floor && updated_velocity.y < 0.0);
 
+        #[allow(clippy::cast_possible_truncation)]
         let state = DbPlayerState {
             position: DbVector2::from(self.base().get_position()),
             direction: direction as i32,
@@ -132,7 +140,7 @@ impl LocalPlayerNode {
         };
 
         match connection.send_inputs(state) {
-            Ok(_) => {}
+            Ok(()) => {}
             Err(e) => godot_print!("Failed to send inputs: {}", e),
         }
     }

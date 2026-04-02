@@ -1,1 +1,1 @@
-# Kik-Pok Game Multiplayer Server
+# Some 2D Game Multiplayer Server

@@ -1,1 +1,1 @@
-# Kik-Pok Game Engine
+# Some 2D Game Engine

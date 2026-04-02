@@ -6,7 +6,7 @@ use spacetimedb_sdk::{Error, credentials};
 
 use std::hash::{DefaultHasher, Hash, Hasher};
 
-const DB_NAME: &str = "kik-pok";
+const DB_NAME: &str = "some-2d-game";
 
 #[cfg(feature = "remote-db")]
 const DB_HOST: &str = "https://maincloud.spacetimedb.com";
@@ -54,6 +54,7 @@ impl ConnectionModule {
             ))
     }
 
+    #[allow(clippy::unused_self)]
     fn connect_to_db_with_creds(
         &self,
         jwt: Option<String>,
@@ -78,6 +79,7 @@ impl ConnectionModule {
             .map_err(|e| RustLibError::SpacetimeSDK { source: e })
     }
 
+    #[allow(clippy::needless_pass_by_value)]
     fn on_connect_error(_ctx: &ErrorContext, err: Error) {
         godot_print!("Connection error: {:?}", err);
     }

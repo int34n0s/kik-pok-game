@@ -20,8 +20,8 @@ impl Default for WorldBootstrap {
 }
 
 impl WorldBootstrap {
-    pub fn new() -> WorldBootstrap {
-        WorldBootstrap {}
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub fn setup_multiplayer(connection: &DbConnection) {
@@ -45,6 +45,7 @@ impl WorldBootstrap {
         Ok(())
     }
 
+    #[allow(clippy::unused_self)]
     fn bootstrap_player(
         &self,
         multiplayer_base: &mut BaseMut<MultiplayerManager>,
@@ -67,8 +68,7 @@ impl WorldBootstrap {
         let mut resource_loader = ResourceLoader::singleton();
         let Some(packed_scene) = resource_loader.load(LOCAL_PLAYER_SCENE_PATH) else {
             return Err(RustLibError::WorldSetup(format!(
-                "Failed to load resource at {}",
-                LOCAL_PLAYER_SCENE_PATH
+                "Failed to load resource at {LOCAL_PLAYER_SCENE_PATH}"
             )));
         };
 
@@ -99,6 +99,7 @@ impl WorldBootstrap {
         Ok(())
     }
 
+    #[allow(clippy::unused_self, clippy::unnecessary_wraps)]
     fn bootstrap_coins(
         &self,
         multiplayer_base: &mut BaseMut<MultiplayerManager>,
@@ -143,9 +144,10 @@ impl WorldBootstrap {
         Ok(())
     }
 
+    #[allow(clippy::unused_self)]
     fn sync_platforms(
         &self,
-        multiplayer_base: &mut BaseMut<MultiplayerManager>,
+        multiplayer_base: &BaseMut<MultiplayerManager>,
         connection: &DbConnection,
     ) -> Result<(), RustLibError> {
         if let Err(e) = connection.reducers.update_timestamp() {
@@ -159,16 +161,17 @@ impl WorldBootstrap {
 
         for i in 1..=platform_count {
             let platform =
-                platform_group.try_get_node_as::<PlatformNode>(format!("Platform{}", i).as_str());
+                platform_group.try_get_node_as::<PlatformNode>(format!("Platform{i}").as_str());
 
             match connection.reducers.update_timestamp() {
-                Ok(_) => {}
+                Ok(()) => {}
                 Err(e) => godot_print!("Failed to update timestamp: {}", e),
             }
 
             match connection.frame_tick() {
-                Ok(_) => {
+                Ok(()) => {
                     let world_scene = get_world_scene(connection)?;
+                    #[allow(clippy::cast_precision_loss)]
                     let t_micro = get_diff_between_timestamps(&world_scene) as f64;
 
                     if let Some(mut platform) = platform {
@@ -182,9 +185,10 @@ impl WorldBootstrap {
         Ok(())
     }
 
+    #[allow(clippy::unused_self)]
     fn sync_animated_enemies(
         &self,
-        multiplayer_base: &mut BaseMut<MultiplayerManager>,
+        multiplayer_base: &BaseMut<MultiplayerManager>,
         connection: &DbConnection,
     ) -> Result<(), RustLibError> {
         if let Err(e) = connection.reducers.update_timestamp() {
@@ -195,17 +199,17 @@ impl WorldBootstrap {
         let enemy_count = enemy_group.get_child_count();
 
         for i in 1..=enemy_count {
-            let enemy =
-                enemy_group.try_get_node_as::<GreenSlimeNode>(format!("Enemy{}", i).as_str());
+            let enemy = enemy_group.try_get_node_as::<GreenSlimeNode>(format!("Enemy{i}").as_str());
 
             match connection.reducers.update_timestamp() {
-                Ok(_) => {}
+                Ok(()) => {}
                 Err(e) => godot_print!("Failed to update timestamp: {}", e),
             }
 
             match connection.frame_tick() {
-                Ok(_) => {
+                Ok(()) => {
                     let world_scene = get_world_scene(connection)?;
+                    #[allow(clippy::cast_precision_loss)]
                     let t_micro = get_diff_between_timestamps(&world_scene) as f64;
 
                     if let Some(mut enemy) = enemy {

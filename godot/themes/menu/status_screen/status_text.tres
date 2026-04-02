@@ -1,0 +1,14 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://wjvwbivo1kv"]
+
+[ext_resource type="StyleBox" uid="uid://dgdqcwu7lf2t2" path="res://themes/menu/status_screen/label_status.tres" id="2_a4upl"]
+[ext_resource type="FontFile" uid="uid://dqoovl4fbxitg" path="res://assets/fonts/PixelOperator8.ttf" id="5_0at06"]
+
+[resource]
+default_font = ExtResource("5_0at06")
+default_font_size = 18
+Button/styles/normal = null
+Label/font_sizes/font_size = 8
+Label/styles/normal = ExtResource("2_a4upl")
+LineEdit/styles/normal = null
+PanelContainer/styles/panel = null
+VBoxContainer/constants/separation = 5

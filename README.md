@@ -1,4 +1,4 @@
-# Kik-Pok Game Monorepo
+# Some 2D Game Monorepo
 
 This is a multiplayer game where the users should play coop game thing to be able to go through different "bioms"
 

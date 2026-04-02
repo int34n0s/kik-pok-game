@@ -1,6 +1,6 @@
 use godot::builtin::Vector2;
 
-use crate::*;
+use crate::DbVector2;
 
 impl From<Vector2> for DbVector2 {
     fn from(value: Vector2) -> Self {

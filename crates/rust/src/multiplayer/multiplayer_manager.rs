@@ -1,13 +1,11 @@
 use crate::multiplayer::bootstrap::WorldBootstrap;
 use crate::*;
 
-use godot::classes::{Engine, INode, Node};
+use godot::classes::{INode, Node};
 use godot::prelude::*;
 
 use spacetimedb_sdk::Identity;
 use std::collections::HashMap;
-
-pub const FRAME_RATE: f32 = 60.0;
 
 #[derive(GodotClass)]
 #[class(base=Node)]
@@ -28,12 +26,11 @@ impl INode for MultiplayerManager {
     }
 
     fn process(&mut self, delta: f64) {
+        #[allow(clippy::cast_possible_truncation)]
         self.handle_multiplayer_updates(delta as f32);
     }
 
     fn ready(&mut self) {
-        Engine::singleton().set_max_fps(FRAME_RATE as i32);
-
         let Some(db_manager) = SpacetimeDBManager::get_read_connection() else {
             godot_print!("Failed to get database connection");
             return;
@@ -110,7 +107,7 @@ impl MultiplayerManager {
             .remote_players
             .keys()
             .filter(|&player_id| !current_remote_players.contains(player_id))
-            .cloned()
+            .copied()
             .collect();
 
         for player_id in players_to_remove {

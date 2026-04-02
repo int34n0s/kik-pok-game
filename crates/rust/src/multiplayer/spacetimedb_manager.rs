@@ -2,9 +2,9 @@ use crate::multiplayer::connection_module::ConnectionModule;
 use crate::register_player_reducer::register_player;
 
 use crate::{
-    CoinNode, ConnectionState, DbConnection, DbPlayer, DbPlayerState, GameManager, GreenSlimeNode,
-    LocalPlayerNode, LoginModule, PlatformNode, RustLibError, WorldBootstrap, send_player_state,
-    try_collect_coin,
+    CoinNode, ConnectionState, DbConnection, DbPlayer, DbPlayerState, GreenSlimeNode,
+    LocalPlayerNode, LoginModule, PlatformNode, RustLibError, StatusPanel, WorldBootstrap,
+    send_player_state, try_collect_coin,
 };
 use crate::{DbVector2, PlayerTableAccess, WorldSceneTableAccess};
 
@@ -12,16 +12,13 @@ use godot::prelude::*;
 
 use spacetimedb_sdk::{DbContext, Error, Table};
 
-use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
+use std::sync::{Arc, LazyLock, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 
-use lazy_static::lazy_static;
+static GLOBAL_CONNECTION: LazyLock<Arc<RwLock<SpacetimeDBManager>>> =
+    LazyLock::new(|| Arc::new(RwLock::new(SpacetimeDBManager::new())));
 
-lazy_static! {
-    static ref GLOBAL_CONNECTION: Arc<RwLock<SpacetimeDBManager>> =
-        Arc::new(RwLock::new(SpacetimeDBManager::new()));
-    pub static ref REGISTRATION_STATE: Arc<Mutex<RegistrationState>> =
-        Arc::new(Mutex::new(RegistrationState::default()));
-}
+pub static REGISTRATION_STATE: LazyLock<Arc<Mutex<RegistrationState>>> =
+    LazyLock::new(|| Arc::new(Mutex::new(RegistrationState::default())));
 
 #[derive(Default)]
 pub enum RegistrationState {
@@ -45,7 +42,7 @@ impl SpacetimeDBManager {
         }
     }
 
-    pub fn get_write_connection<'a>() -> Option<RwLockWriteGuard<'a, SpacetimeDBManager>> {
+    pub fn get_write_connection<'a>() -> Option<RwLockWriteGuard<'a, Self>> {
         if GLOBAL_CONNECTION.is_poisoned() {
             GLOBAL_CONNECTION.clear_poison();
 
@@ -58,7 +55,7 @@ impl SpacetimeDBManager {
         Some(GLOBAL_CONNECTION.write().unwrap())
     }
 
-    pub fn get_read_connection<'a>() -> Option<RwLockReadGuard<'a, SpacetimeDBManager>> {
+    pub fn get_read_connection<'a>() -> Option<RwLockReadGuard<'a, Self>> {
         if GLOBAL_CONNECTION.is_poisoned() {
             GLOBAL_CONNECTION.clear_poison();
 
@@ -91,15 +88,15 @@ impl SpacetimeDBManager {
         self.connection_module.connect(username)
     }
 
-    fn register_subscribers(&mut self) -> Result<(), RustLibError> {
+    fn register_subscribers(&self) -> Result<(), RustLibError> {
         let connection = self.connection_module.get_connection()?;
 
         CoinNode::setup_multiplayer(connection);
-        GameManager::setup_multiplayer(connection);
+        StatusPanel::setup_multiplayer(connection);
         PlatformNode::setup_multiplayer(connection);
         GreenSlimeNode::setup_multiplayer(connection);
         WorldBootstrap::setup_multiplayer(connection);
-        LocalPlayerNode::setup_multiplayer(connection, REGISTRATION_STATE.clone());
+        LocalPlayerNode::setup_multiplayer(connection, Arc::clone(&*REGISTRATION_STATE));
 
         Ok(())
     }
@@ -114,21 +111,17 @@ impl SpacetimeDBManager {
         let connection: &DbConnection = self.connection_module.get_connection()?;
 
         match connection.frame_tick() {
-            Ok(_) => Ok(()),
-            Err(e) => match e {
-                Error::Disconnected => {
+            Ok(()) => Ok(()),
+            Err(e) => {
+                if matches!(e, Error::Disconnected) {
                     godot_print!("Disconnected from server");
-
                     *self.login_module.get_state_mut() = ConnectionState::Disconnected;
-
                     Ok(())
-                }
-                _ => {
+                } else {
                     godot_print!("Error: {:?}", e);
-
                     Err(RustLibError::SpacetimeSDK { source: e })
                 }
-            },
+            }
         }
     }
 }
@@ -137,7 +130,7 @@ impl SpacetimeDBManager {
     pub fn register_player(&mut self, username: String, scene_id: u32) -> Result<(), RustLibError> {
         let connection = self.connection_module.get_connection()?;
         match connection.reducers.register_player(username, scene_id) {
-            Ok(_) => {
+            Ok(()) => {
                 godot_print!("Player registration request sent successfully!");
 
                 Ok(())
@@ -168,17 +161,21 @@ impl SpacetimeDBManager {
     }
 
     pub fn check_and_login(&mut self) -> bool {
-        let registration_state = REGISTRATION_STATE.lock().unwrap();
-        match &*registration_state {
-            RegistrationState::NotRegistered => {}
-            RegistrationState::Registered => {
-                *self.login_module.get_state_mut() = ConnectionState::LoggedIn;
+        let state = {
+            let registration_state = REGISTRATION_STATE.lock().unwrap();
+            match &*registration_state {
+                RegistrationState::NotRegistered => None,
+                RegistrationState::Registered => Some(ConnectionState::LoggedIn),
+                RegistrationState::RegistrationFailed(e) => {
+                    Some(ConnectionState::LoginFailed(e.clone()))
+                }
+            }
+        };
 
-                return true;
-            }
-            RegistrationState::RegistrationFailed(e) => {
-                *self.login_module.get_state_mut() = ConnectionState::LoginFailed(e.clone());
-            }
+        if let Some(new_state) = state {
+            let logged_in = new_state == ConnectionState::LoggedIn;
+            *self.login_module.get_state_mut() = new_state;
+            return logged_in;
         }
 
         false
@@ -213,7 +210,7 @@ impl SpacetimeDBManager {
 
         let connection = self.connection_module.get_connection()?;
         match connection.reducers.send_player_state(state) {
-            Ok(_) => Ok(()),
+            Ok(()) => Ok(()),
             Err(e) => {
                 godot_print!("Failed to update position: {}", e);
 
@@ -232,7 +229,7 @@ impl SpacetimeDBManager {
         };
 
         match connection.reducers.try_collect_coin(db_position) {
-            Ok(_) => Ok(()),
+            Ok(()) => Ok(()),
             Err(e) => {
                 godot_print!(
                     "Failed to collect coin at ({}, {}): {}",
